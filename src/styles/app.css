@@ -1,0 +1,7 @@
+/* Ensure that on mobile, the sidebar offcanvas is positioned properly */
+@media (max-width: 768px) {
+    .offcanvas-backdrop.show {
+      transition: transform 0.3s ease-in-out;
+    }
+  }
+  

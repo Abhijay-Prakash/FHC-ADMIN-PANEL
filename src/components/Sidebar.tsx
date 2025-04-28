@@ -10,17 +10,14 @@ import {
   Trophy,
   Users,
   Menu,
-  Code,
-  Binary,
-  BrainCircuit,
   Cpu,
 } from "lucide-react";
 
 const navItems = [
   { name: "Profile", href: "/admin/profile", icon: <User size={18} /> },
   { name: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
-  { name: "BYTE", href: "admin/byte", icon: <Cpu size={18} /> },
-  { name: "Events", href: "admin/events", icon: <Calendar size={18} /> },
+  { name: "BYTE", href: "/admin/byte", icon: <Cpu size={18} /> },
+  { name: "Events", href: "/admin/events", icon: <Calendar size={18} /> },
   { name: "MEMBERS", href: "/admin/members", icon: <BookOpen size={18} /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban size={18} /> },
   { name: "Competitions", href: "/competitions", icon: <Trophy size={18} /> },
@@ -38,9 +35,7 @@ export default function Sidebar() {
       <Nav.Item key={item.href} className="mb-2">
         <Link
           to={item.href}
-          className={`d-flex align-items-center gap-2 nav-link ${
-            location.pathname === item.href ? "fw-bold text-primary" : ""
-          }`}
+          className={`d-flex align-items-center gap-2 nav-link ${location.pathname === item.href ? "fw-bold text-primary" : ""}`}
           onClick={() => setShow(false)}
         >
           {item.icon}
@@ -75,12 +70,13 @@ export default function Sidebar() {
       <div
         className="d-none d-md-block border-end bg-light p-3"
         style={{
-          width: "250px",
+          width: "170px",
           height: "100vh",
           position: "fixed",
           top: 0,
           left: 0,
           zIndex: 1040,
+          transition: "all 0.3s ease",
         }}
       >
         <h5 className="mb-4">FHC Tech Club</h5>
