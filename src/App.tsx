@@ -7,6 +7,9 @@ import ByteDashboard from './pages/ByteDashboard';
 import ByteParticipants from './pages/ByteParticipants';
 import EventsPage from './pages/EventsPage';
 import ViewRegistrationsPage from './pages/ViewRegistrations';
+import MembersPage from './pages/Members';
+import MemberDetailPage from './pages/MemberDetail';
+
 
 function App() {
   return (
@@ -27,6 +30,8 @@ function App() {
           <Route path="/admin/byte-register" element={<ByteParticipants />} />
           <Route path="/admin/events" element={<EventsPage />} />
           <Route path="/events/registrations/:eventId" element={<ViewRegistrationsPage />} />
+          <Route path="/admin/members" element={<MembersPage />} />
+          <Route path="/admin/profile" element={<MemberDetailPage />} />
           
 
           

@@ -17,11 +17,11 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { name: "Profile", href: "/profile", icon: <User size={18} /> },
+  { name: "Profile", href: "/admin/profile", icon: <User size={18} /> },
   { name: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
   { name: "BYTE", href: "admin/byte", icon: <Cpu size={18} /> },
   { name: "Events", href: "admin/events", icon: <Calendar size={18} /> },
-  { name: "Workshops", href: "/workshops", icon: <BookOpen size={18} /> },
+  { name: "MEMBERS", href: "/admin/members", icon: <BookOpen size={18} /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban size={18} /> },
   { name: "Competitions", href: "/competitions", icon: <Trophy size={18} /> },
   { name: "Community", href: "/community", icon: <Users size={18} /> },
