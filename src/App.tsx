@@ -28,11 +28,13 @@ function App() {
           <Route path="/admin/login" element={<LoginPage />} />
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/admin/byte" element={<ByteDashboard />} />
-          <Route path="/admin/byte-register" element={<ByteParticipants />} />
           <Route path="/admin/events" element={<EventsPage />} />
           <Route path="/events/registrations/:eventId" element={<ViewRegistrationsPage />} />
           <Route path="/admin/members" element={<MembersPage />} />
           <Route path="/admin/profile" element={<MemberDetailPage />} />
+          <Route path="/byte-register/:courseId" element={<ByteParticipants />} />
+
+
         </Routes>
       </div>
     </div>

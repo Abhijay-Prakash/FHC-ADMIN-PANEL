@@ -1,4 +1,6 @@
-/* Ensure that on mobile, the sidebar offcanvas is positioned properly */
+
+
+/* Your custom styles */
 @media (max-width: 767px) {
   .offcanvas-backdrop.show {
     transition: transform 0.3s ease-in-out;
@@ -9,10 +11,8 @@
   display: flex;
 }
 
-/* Content margin for desktop */
 @media (min-width: 768px) {
   .content-area {
     margin-left: 250px; /* Sidebar width */
   }
 }
-

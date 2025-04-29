@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useParams } from 'react-router-dom';
+
 
 // Define the participant type (since backend returns these fields directly)
 interface ParticipantType {
@@ -10,21 +12,22 @@ interface ParticipantType {
 }
 
 const ByteParticipants: React.FC = () => {
+  const { courseId } = useParams(); // get dynamic domain from URL
   const [participants, setParticipants] = useState<ParticipantType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const domain = "webdev"; // Replace this with dynamic domain if needed
-
   useEffect(() => {
     const fetchParticipants = async () => {
+      if (!courseId) return; // Exit if no courseId in URL
+
       try {
-        const res = await axios.get(`http://localhost:5000/api/byte/participants?domain=${domain}`);
+        const res = await axios.get(`http://localhost:5000/api/byte/participants?domain=${courseId}`);
         if (Array.isArray(res.data)) {
           setParticipants(res.data);
         } else {
           console.error("Unexpected API response:", res.data);
-          setParticipants([]); // Set empty array if the response isn't as expected
+          setParticipants([]);
         }
       } catch (err: any) {
         console.error(err);
@@ -35,7 +38,11 @@ const ByteParticipants: React.FC = () => {
     };
 
     fetchParticipants();
-  }, [domain]);
+  }, [courseId]);
+
+  if (!courseId) {
+    return <div>No course specified in URL.</div>;
+  }
 
   if (loading) {
     return <div>Loading participants...</div>;
@@ -47,8 +54,7 @@ const ByteParticipants: React.FC = () => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h2>Participants for {domain.toUpperCase()}</h2>
-
+      <h2>Participants for {courseId.toUpperCase()}</h2>
       {participants.length === 0 ? (
         <p>No participants found.</p>
       ) : (
@@ -86,5 +92,4 @@ const ByteParticipants: React.FC = () => {
     </div>
   );
 };
-
 export default ByteParticipants;
