@@ -404,7 +404,7 @@ const AdminDashboard: React.FC = () => {
       </Card>
 
       {/* Custom CSS */}
-      <style jsx>{`
+      <style tsx>{`
         /* Global Styles */
         .loading-container {
           height: 80vh;
