@@ -25,9 +25,11 @@ const AdminLoginPage = () => {
 
       setMsg(res.data.message);
       setTimeout(() => navigate('/admin/dashboard'), 1000); // Navigate to admin page
-    } catch (err) {
+    } catch (err: any) {
       setMsg(err.response?.data?.message || 'Login failed');
-    } finally {
+    }
+    
+     finally {
       setLoading(false);
     }
   };
