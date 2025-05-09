@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from '../axiosConfig';
 import { useParams } from 'react-router-dom';
 
 
@@ -22,7 +22,7 @@ const ByteParticipants: React.FC = () => {
       if (!courseId) return; // Exit if no courseId in URL
 
       try {
-        const res = await axios.get(`http://localhost:5000/api/byte/participants?domain=${courseId}`);
+        const res = await axios.get(`/byte/participants?domain=${courseId}`);
         if (Array.isArray(res.data)) {
           setParticipants(res.data);
         } else {

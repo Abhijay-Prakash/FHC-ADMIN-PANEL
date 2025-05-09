@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from '../axiosConfig';
 import { Dropdown } from 'react-bootstrap';
 import { 
-  ThreeDotsVertical, 
-  PersonCheck, 
+  ThreeDotsVertical,  
   Telephone, 
   Envelope, 
   Grid3x3, 

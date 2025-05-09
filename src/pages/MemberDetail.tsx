@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import { Button, Card, Badge, ProgressBar, Tabs, Tab, Image, Spinner, Alert } from "react-bootstrap";
 import { 
   FaMailBulk, 
@@ -25,13 +25,13 @@ export default function MemberDetailPage() {
     const fetchUserData = async () => {
       try {
         const response = await axios.get(`/users/profile`,{
-          withCredentials
+          withCredentials : true
         });
         setUser(response.data);
         
         // Fetch events data
         if (response.data.eventsRegistered?.length > 0 || response.data.eventsAttended?.length > 0) {
-          const eventsResponse = await axios.get(`/api/events/user/${id}`);
+          const eventsResponse = await axios.get(`/events/user/${id}`);
           setEvents(eventsResponse.data);
         }
         

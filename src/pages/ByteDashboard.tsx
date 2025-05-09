@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, Row, Col, Spinner, Container, Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import axios from "../axiosConfig";
 
 // Domain configuration
 const domainConfig = {
@@ -45,7 +45,7 @@ export default function ByteDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const { data } = await axios.get("http://localhost:5000/api/byte/dashboard-stats", {
+        const { data } = await axios.get("/byte/dashboard-stats", {
           withCredentials: true
         });
 

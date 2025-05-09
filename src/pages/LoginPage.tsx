@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import axios from '../axiosConfig';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,14 +11,14 @@ const AdminLoginPage = () => {
 
   const navigate = useNavigate();
 
-  const handleAdminLogin = async (e) => {
+  const handleAdminLogin = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     setLoading(true);
     setMsg('');
 
     try {
       const res = await axios.post(
-        'http://localhost:5000/api/admin/login',
+        '/admin/login',
         { email, password },
         { withCredentials: true }
       );

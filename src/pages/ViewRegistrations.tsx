@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../axiosConfig';
 
 interface UserType {
   name: string;
@@ -21,7 +21,7 @@ const ViewRegistrationsPage = () => {
 
   const fetchRegistrations = async (eventId: string) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/events/registrations', { eventId });
+      const res = await axios.post('/events/registrations', { eventId });
       setRegisteredUsers(res.data.registeredUsers);
     } catch (error) {
       console.error('Error fetching registrations:', error);
