@@ -1,9 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { Card, Row, Col, Spinner, Container, Badge, ProgressBar } from "react-bootstrap";
+import { useEffect, useState } from "react";
+import {
+  Card,
+  Row,
+  Col,
+  Spinner,
+  Container,
+  Badge,
+  ProgressBar
+} from "react-bootstrap";
 import { Link } from "react-router-dom";
 import axios from "../axiosConfig";
 
-// Domain configuration
+// Domain Configuration
 const domainConfig = {
   webdev: {
     name: "Web Development",
@@ -33,39 +41,53 @@ const domainConfig = {
     icon: "bi bi-cpu",
     description: "AI & data science fundamentals"
   }
+} as const;
+
+type DomainKey = keyof typeof domainConfig;
+
+type Stats = {
+  [key in DomainKey]?: number;
+};
+
+type TopDomain = {
+  name: string;
+  count: number;
+  key?: DomainKey;
 };
 
 export default function ByteDashboard() {
-  const [stats, setStats] = useState({});
+  const [stats, setStats] = useState<Stats>({});
   const [totalRegistrations, setTotalRegistrations] = useState(0);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("Just Now");
-  const [topDomain, setTopDomain] = useState({ name: "None", count: 0 });
+  const [topDomain, setTopDomain] = useState<TopDomain>({
+    name: "None",
+    count: 0
+  });
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const { data } = await axios.get("/byte/dashboard-stats", {
+        const { data } = await axios.get<Stats>("/byte/dashboard-stats", {
           withCredentials: true
         });
 
         setStats(data);
 
-        const total = Object.values(data).reduce((sum, count) => sum + count, 0);
+        const total = Object.values(data).reduce((sum, count) => sum + (count || 0), 0);
         setTotalRegistrations(total);
 
         if (Object.keys(data).length > 0) {
-          const top = Object.keys(data).reduce((a, b) => data[a] > data[b] ? a : b);
+          const top = Object.keys(data).reduce((a, b) => (data[a as DomainKey] || 0) > (data[b as DomainKey] || 0) ? a : b) as DomainKey;
           setTopDomain({
             name: domainConfig[top].name,
-            count: data[top],
+            count: data[top] || 0,
             key: top
           });
         }
 
         const now = new Date();
         setLastUpdated(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-
         setLoading(false);
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
@@ -74,7 +96,7 @@ export default function ByteDashboard() {
     };
 
     fetchStats();
-    const intervalId = setInterval(fetchStats, 300000); // every 5 minutes
+    const intervalId = setInterval(fetchStats, 300000);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -174,19 +196,19 @@ export default function ByteDashboard() {
           </Card.Header>
           <Card.Body>
             {Object.keys(stats).map((domain) => {
-              const percentage = Math.round((stats[domain] / totalRegistrations) * 100);
+              const count = stats[domain as DomainKey] || 0;
+              const percentage = totalRegistrations ? Math.round((count / totalRegistrations) * 100) : 0;
               return (
                 <div key={"progress-" + domain} className="mb-3">
                   <div className="d-flex justify-content-between align-items-center mb-1">
-                    <span className="fw-bold">{domainConfig[domain].name}</span>
+                    <span className="fw-bold">{domainConfig[domain as DomainKey].name}</span>
                     <span className="badge bg-light text-dark">
-                      {stats[domain]} ({percentage}%)
+                      {count} ({percentage}%)
                     </span>
                   </div>
-                  <ProgressBar 
-                    now={percentage} 
-                    style={{ height: "10px", backgroundColor: "#f8f9fc" }} 
-                    variant=""
+                  <ProgressBar
+                    now={percentage}
+                    style={{ height: "10px", backgroundColor: "#f8f9fc" }}
                   />
                 </div>
               );
@@ -198,42 +220,56 @@ export default function ByteDashboard() {
       {/* Domain Cards */}
       <h5 className="mb-3">Domain Registration Details</h5>
       <Row className="g-3">
-        {Object.keys(stats).map((domain) => (
-          <Col xs={12} sm={6} lg={4} xl={3} key={domain}>
-            <Link to={`/byte-register/${domain}`} className="text-decoration-none">
-              <Card className="h-100 border-0 shadow-sm">
-                <div style={{ background: domainConfig[domain].gradient, height: "6px" }}></div>
-                <Card.Body className="position-relative">
-                  <div 
-                    className="domain-icon mb-3" 
-                    style={{ backgroundColor: domainConfig[domain].color, width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}
-                  >
-                    <i className={`${domainConfig[domain].icon} text-white`}></i>
-                  </div>
-
-                  <div className="mb-2">
-                    <div className="h5 fw-bold">{domainConfig[domain].name}</div>
-                    <p className="text-muted small mb-0">{domainConfig[domain].description}</p>
-                  </div>
-
-                  <hr className="my-3" />
-
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <div className="h2 mb-0 fw-bold">{stats[domain]}</div>
-                      <div className="text-muted small">Registrations</div>
-                    </div>
-                    <Badge 
-                      style={{ backgroundColor: `${domainConfig[domain].color}22`, color: domainConfig[domain].color }}
+        {Object.keys(stats).map((domain) => {
+          const key = domain as DomainKey;
+          return (
+            <Col xs={12} sm={6} lg={4} xl={3} key={key}>
+              <Link to={`/byte-register/${key}`} className="text-decoration-none">
+                <Card className="h-100 border-0 shadow-sm">
+                  <div style={{ background: domainConfig[key].gradient, height: "6px" }}></div>
+                  <Card.Body className="position-relative">
+                    <div
+                      className="domain-icon mb-3"
+                      style={{
+                        backgroundColor: domainConfig[key].color,
+                        width: 40,
+                        height: 40,
+                        borderRadius: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
                     >
-                      View Details <i className="bi bi-arrow-right ms-1"></i>
-                    </Badge>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Link>
-          </Col>
-        ))}
+                      <i className={`${domainConfig[key].icon} text-white`}></i>
+                    </div>
+
+                    <div className="mb-2">
+                      <div className="h5 fw-bold">{domainConfig[key].name}</div>
+                      <p className="text-muted small mb-0">{domainConfig[key].description}</p>
+                    </div>
+
+                    <hr className="my-3" />
+
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div className="h2 mb-0 fw-bold">{stats[key]}</div>
+                        <div className="text-muted small">Registrations</div>
+                      </div>
+                      <Badge
+                        style={{
+                          backgroundColor: `${domainConfig[key].color}22`,
+                          color: domainConfig[key].color
+                        }}
+                      >
+                        {key.toUpperCase()}
+                      </Badge>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Link>
+            </Col>
+          );
+        })}
       </Row>
     </Container>
   );
