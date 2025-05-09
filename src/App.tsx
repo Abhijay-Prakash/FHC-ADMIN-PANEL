@@ -33,8 +33,6 @@ function App() {
           <Route path="/admin/members" element={<MembersPage />} />
           <Route path="/admin/profile" element={<MemberDetailPage />} />
           <Route path="/byte-register/:courseId" element={<ByteParticipants />} />
-
-
         </Routes>
       </div>
     </div>
