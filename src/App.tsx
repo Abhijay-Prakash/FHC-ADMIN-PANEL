@@ -20,7 +20,7 @@ function App() {
       <div
         className="flex-grow-1 p-3"
         style={{
-          marginLeft: "0", // Default: no margin when sidebar is not fixed
+          marginLeft: "0", 
           transition: 'margin-left 0.3s ease', // Smooth transition for content shift
         }}
       >
