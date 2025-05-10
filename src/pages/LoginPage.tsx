@@ -17,13 +17,11 @@ const AdminLoginPage = () => {
     setMsg('');
 
     try {
-      const res = await axios.post(
-        '/admin/login',
-        { email, password },
-        { withCredentials: true }
-      );
+      const response = await axios.post('/auth/login', { email, password });
+      const { token } = response.data;
+      localStorage.setItem('authToken', token);
 
-      setMsg(res.data.message);
+      setMsg(response.data.message);
       setTimeout(() => navigate('/admin/dashboard'), 1000); // Navigate to admin page
     } catch (err: any) {
       setMsg(err.response?.data?.message || 'Login failed');
