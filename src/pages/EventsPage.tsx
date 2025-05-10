@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from '../axiosConfig';
+import axios from 'axios';
 
 interface EventType {
   _id: string;
@@ -51,7 +51,7 @@ const EventsPage = () => {
   const fetchEvents = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get('/events/getEvents', { withCredentials: true });
+      const res = await axios.get('http://localhost:5000/api/events/getEvents', { withCredentials: true });
       setEvents(res.data);
       setTimeout(() => setIsLoading(false), 500);
     } catch (error) {
@@ -69,7 +69,7 @@ const EventsPage = () => {
     };
 
     try {
-      await axios.post('/events/addEvent', formattedEvent);
+      await axios.post('http://localhost:5000/api/events/addEvent', formattedEvent);
       setShowAddModal(false);
       setNewEvent({});
       fetchEvents();
@@ -78,6 +78,7 @@ const EventsPage = () => {
     }
   };
 
+  
   const handleViewRegistrations = (eventId: string) => {
     navigate(`/events/registrations/${eventId}`);
   };
