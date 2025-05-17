@@ -38,7 +38,7 @@ const SendIndividualCerti: React.FC = () => {
       await axios.post('/certificate/send-certificate', {
         name: user.name,
         email: user.email,
-        event: eventId, // Optional: replace with event title if needed
+        eventId, // Optional: replace with event title if needed
       });
       setSuccessMessage(`Certificate sent to ${user.email}`);
     } catch (error) {
