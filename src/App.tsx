@@ -35,7 +35,7 @@ function App() {
           <Route path="/admin/profile" element={<MemberDetailPage />} />
           <Route path="/byte-register/:courseId" element={<ByteParticipants />} />
           <Route path="/admin/certificates" element={<CertificateSender />} />
-          <Route path="/certifications/:eventId" element={<SendIndividualCertificatesPage />} />
+          <Route path="/certificates/individual/:eventId" element={<SendIndividualCertificatesPage />} />
 
         </Routes>
       </div>

@@ -35,7 +35,7 @@ const SendIndividualCerti: React.FC = () => {
     setLoadingEmail(user.email);
     setSuccessMessage(null);
     try {
-      await axios.post('/certificate/send', {
+      await axios.post('/certificate/send-certificate', {
         name: user.name,
         email: user.email,
         event: eventId, // Optional: replace with event title if needed
