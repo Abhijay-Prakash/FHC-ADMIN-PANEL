@@ -23,9 +23,6 @@ const ByteParticipants: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const uniqueSemesters = Array.from(new Set(participants.map(p => p.semester))).sort();
-  const uniqueClasses = Array.from(new Set(participants.map(p => p.class))).sort();
-
   useEffect(() => {
     const fetchParticipants = async () => {
       if (!courseId) return;
@@ -33,8 +30,14 @@ const ByteParticipants: React.FC = () => {
       try {
         const res = await axios.get(`/byte/participants?domain=${courseId}`);
         if (Array.isArray(res.data)) {
-          setParticipants(res.data);
-          setFilteredParticipants(res.data);
+          // Normalize values while setting
+          const cleanedData = res.data.map((p: ParticipantType) => ({
+            ...p,
+            semester: p.semester?.toString().trim(),
+            class: p.class?.toString().trim()
+          }));
+          setParticipants(cleanedData);
+          setFilteredParticipants(cleanedData);
         } else {
           console.error("Unexpected API response:", res.data);
           setParticipants([]);
@@ -50,6 +53,9 @@ const ByteParticipants: React.FC = () => {
     fetchParticipants();
   }, [courseId]);
 
+  const uniqueSemesters = Array.from(new Set(participants.map(p => p.semester?.trim()))).sort();
+  const uniqueClasses = Array.from(new Set(participants.map(p => p.class?.trim()))).sort();
+
   useEffect(() => {
     let filtered = [...participants];
 
@@ -60,12 +66,16 @@ const ByteParticipants: React.FC = () => {
       );
     }
 
-    if (semesterFilter) {
-      filtered = filtered.filter(p => p.semester === semesterFilter);
+    if (semesterFilter.trim() !== '') {
+      filtered = filtered.filter(p =>
+        p.semester?.toLowerCase().trim() === semesterFilter.toLowerCase().trim()
+      );
     }
 
-    if (classFilter) {
-      filtered = filtered.filter(p => p.class === classFilter);
+    if (classFilter.trim() !== '') {
+      filtered = filtered.filter(p =>
+        p.class?.toLowerCase().trim() === classFilter.toLowerCase().trim()
+      );
     }
 
     setFilteredParticipants(filtered);
@@ -73,12 +83,12 @@ const ByteParticipants: React.FC = () => {
 
   const semesterData = uniqueSemesters.map(sem => ({
     name: sem,
-    count: participants.filter(p => p.semester === sem).length
+    count: participants.filter(p => p.semester?.trim() === sem).length
   }));
 
   const classData = uniqueClasses.map(cls => ({
     name: cls,
-    count: participants.filter(p => p.class === cls).length
+    count: participants.filter(p => p.class?.trim() === cls).length
   }));
 
   const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1', '#a4de6c', '#d0ed57'];
