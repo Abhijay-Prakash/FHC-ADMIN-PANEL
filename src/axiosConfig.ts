@@ -1,7 +1,10 @@
 import axios from 'axios';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const instance = axios.create({
-  baseURL: 'http://localhost:5000/api',  
+  baseURL: process.env.VITE_BACKEND_URL,  
 });
 
 instance.interceptors.request.use((config) => {
