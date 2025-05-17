@@ -16,7 +16,7 @@ const CertificateSenderPage: React.FC = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get('/api/events/getEvents');
+      const response = await axios.get('/events/getEvents');
       setEvents(response.data);
     } catch (error) {
       console.error('Failed to fetch events:', error);
@@ -27,7 +27,7 @@ const CertificateSenderPage: React.FC = () => {
     setLoading(eventId);
     setMessage(null);
     try {
-      const res = await axios.post(`/certificates/send-all/${eventId}`);
+      const res = await axios.post(`/certificate/send-all/${eventId}`);
       setMessage(res.data.message || 'Certificates sent!');
     } catch (error) {
       console.error('Failed to send certificates:', error);
