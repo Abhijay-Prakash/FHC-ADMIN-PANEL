@@ -1,10 +1,7 @@
 import axios from 'axios';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const instance = axios.create({
-  baseURL: process.env.VITE_BACKEND_URL,  
+  baseURL: import.meta.env.VITE_BACKEND_URL,  
 });
 
 instance.interceptors.request.use((config) => {
