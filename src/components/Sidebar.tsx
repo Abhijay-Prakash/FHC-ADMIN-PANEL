@@ -13,12 +13,14 @@ import {
   Cpu,
 } from "lucide-react";
 
+// ✅ Updated hrefs and labels to match the second code
 const navItems = [
   { name: "Profile", href: "/admin/profile", icon: <User size={18} /> },
   { name: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
   { name: "BYTE", href: "/admin/byte", icon: <Cpu size={18} /> },
   { name: "Events", href: "/admin/events", icon: <Calendar size={18} /> },
-  { name: "MEMBERS", href: "/admin/members", icon: <BookOpen size={18} /> },
+  { name: "Members", href: "/admin/members", icon: <BookOpen size={18} /> },
+  { name: "Certificates", href: "/admin/certificates", icon: <BookOpen size={18} /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban size={18} /> },
   { name: "Competitions", href: "/competitions", icon: <Trophy size={18} /> },
   { name: "Community", href: "/community", icon: <Users size={18} /> },
@@ -51,7 +53,7 @@ export default function Sidebar() {
         variant="outline-secondary"
         className="d-md-none position-fixed top-0 start-0 m-3 z-3"
         onClick={toggleSidebar}
-        style={{ zIndex: 1041 }} // Above Offcanvas backdrop
+        style={{ zIndex: 1041 }}
       >
         <Menu size={20} />
       </Button>
@@ -70,7 +72,7 @@ export default function Sidebar() {
       <div
         className="d-none d-md-block border-end bg-light p-3"
         style={{
-          width: "170px",
+          width: "170px", // Match second version
           height: "100vh",
           position: "fixed",
           top: 0,
