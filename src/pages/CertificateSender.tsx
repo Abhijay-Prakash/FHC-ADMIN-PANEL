@@ -1,5 +1,6 @@
-// CertificateSenderPage.tsx
+// src/pages/CertificateSenderPage.tsx
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../axiosConfig';
 
 type Event = {
@@ -13,6 +14,7 @@ const CertificateSenderPage: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const fetchEvents = async () => {
     try {
@@ -43,32 +45,49 @@ const CertificateSenderPage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 600, margin: '2rem auto', padding: '1rem' }}>
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1rem' }}>Send Certificates to All Attendees</h2>
+      <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1rem' }}>Send Certificates</h2>
       {message && <div style={{ marginBottom: '1rem', color: 'green' }}>{message}</div>}
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {events.map((event) => (
           <li key={event._id} style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '6px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
               <div>
                 <strong>{event.title}</strong>
                 <div style={{ fontSize: '0.9rem', color: '#555' }}>
                   {new Date(event.date).toLocaleDateString()} | {event.category}
                 </div>
               </div>
-              <button
-                onClick={() => sendCertificates(event._id)}
-                disabled={loading === event._id}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: loading === event._id ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {loading === event._id ? 'Sending...' : 'Send Certificates'}
-              </button>
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={() => sendCertificates(event._id)}
+                  disabled={loading === event._id}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: loading === event._id ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {loading === event._id ? 'Sending...' : 'Send All'}
+                </button>
+
+                <button
+                  onClick={() => navigate(`/certificates/individual/${event._id}`)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  View Participants
+                </button>
+              </div>
             </div>
           </li>
         ))}

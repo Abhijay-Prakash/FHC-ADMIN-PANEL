@@ -10,7 +10,7 @@ import ViewRegistrationsPage from './pages/ViewRegistrations';
 import MembersPage from './pages/Members';
 import MemberDetailPage from './pages/MemberDetail';
 import CertificateSender from './pages/CertificateSender';
-
+import SendIndividualCertificatesPage from './pages/SendIndividualCerti';
 function App() {
   return (
     <div className="d-flex">
@@ -35,6 +35,8 @@ function App() {
           <Route path="/admin/profile" element={<MemberDetailPage />} />
           <Route path="/byte-register/:courseId" element={<ByteParticipants />} />
           <Route path="/admin/certificates" element={<CertificateSender />} />
+          <Route path="/certifications/:eventId" element={<SendIndividualCertificatesPage />} />
+
         </Routes>
       </div>
     </div>
