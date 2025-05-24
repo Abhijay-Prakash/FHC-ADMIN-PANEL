@@ -243,6 +243,7 @@ const EventsPage = () => {
                       <option>Meetup</option>
                       <option>Seminar</option>
                       <option>Training</option>
+                      <option>Meeting</option>
                       <option>Other</option>
                     </select>
                   </div>
