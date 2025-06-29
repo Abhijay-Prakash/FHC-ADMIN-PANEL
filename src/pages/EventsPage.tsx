@@ -12,6 +12,7 @@ interface EventType {
   capacity: number;
   tags: string[];
   category: string;
+  registrationStatus?: string;
 }
 
 const categoryColors: { [key: string]: string } = {
@@ -78,10 +79,25 @@ const EventsPage = () => {
     }
   };
 
-
   const handleViewRegistrations = (eventId: string) => {
     navigate(`/events/registrations/${eventId}`);
   };
+
+const handleStatusChange = async (eventId: string, newStatus: string) => {
+  try {
+    await axios.put(`/events/${eventId}/status`, { status: newStatus });
+
+    
+    setEvents((prevEvents) =>
+      prevEvents.map((event) =>
+        event._id === eventId ? { ...event, registrationStatus: newStatus } : event
+      )
+    );
+  } catch (err) {
+    console.error('Failed to update status:', err);
+  }
+};
+
 
   const filterEvents = () => {
     if (selectedCategory === "All") return events;
@@ -164,6 +180,21 @@ const EventsPage = () => {
                           Capacity: {event.capacity}
                         </span>
                       </div>
+
+                      {/* 🟡 Registration Status Dropdown */}
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Registration Status:</label>
+                        <select
+                          className="form-select"
+                          value={event.registrationStatus || 'Open'}
+                          onChange={(e) => handleStatusChange(event._id, e.target.value)}
+                        >
+                          {['Upcoming', 'Open', 'Closed', 'Full', 'Completed', 'Cancelled'].map((status) => (
+                            <option key={status} value={status}>{status}</option>
+                          ))}
+                        </select>
+                      </div>
+
                       <p className="card-text mb-3">{event.description}</p>
                       <div className="d-flex align-items-center mb-3">
                         <i className="bi bi-calendar3 text-primary me-2"></i>
