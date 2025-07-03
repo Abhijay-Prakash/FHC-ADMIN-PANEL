@@ -83,21 +83,31 @@ const EventsPage = () => {
     navigate(`/events/registrations/${eventId}`);
   };
 
-const handleStatusChange = async (eventId: string, newStatus: string) => {
-  try {
-    await axios.put(`/events/${eventId}/status`, { status: newStatus });
+  const handleStatusChange = async (eventId: string, newStatus: string) => {
+    try {
+      await axios.put(`/events/${eventId}/status`, { status: newStatus });
+      setEvents((prev) =>
+        prev.map((event) =>
+          event._id === eventId ? { ...event, registrationStatus: newStatus } : event
+        )
+      );
+    } catch (err) {
+      console.error('Failed to update status:', err);
+    }
+  };
 
-    
-    setEvents((prevEvents) =>
-      prevEvents.map((event) =>
-        event._id === eventId ? { ...event, registrationStatus: newStatus } : event
-      )
-    );
-  } catch (err) {
-    console.error('Failed to update status:', err);
-  }
-};
+  const handleDeleteEvent = async (eventId: string) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this event?");
+    if (!confirmDelete) return;
 
+    try {
+      await axios.delete(`/events/${eventId}/delete`);
+      setEvents((prevEvents) => prevEvents.filter((event) => event._id !== eventId));
+    } catch (err) {
+      console.error("Failed to delete event:", err);
+      alert("Failed to delete the event. Please try again.");
+    }
+  };
 
   const filterEvents = () => {
     if (selectedCategory === "All") return events;
@@ -181,7 +191,6 @@ const handleStatusChange = async (eventId: string, newStatus: string) => {
                         </span>
                       </div>
 
-                      {/* 🟡 Registration Status Dropdown */}
                       <div className="mb-3">
                         <label className="form-label fw-semibold">Registration Status:</label>
                         <select
@@ -214,9 +223,12 @@ const handleStatusChange = async (eventId: string, newStatus: string) => {
                         ))}
                       </div>
                     </div>
-                    <div className="card-footer bg-white border-0 pb-3">
-                      <button className="btn w-100" style={{ backgroundColor: categoryColor, color: textColor }} onClick={() => handleViewRegistrations(event._id)}>
+                    <div className="card-footer bg-white border-0 pb-3 d-flex gap-2">
+                      <button className="btn flex-fill" style={{ backgroundColor: categoryColor, color: textColor }} onClick={() => handleViewRegistrations(event._id)}>
                         <i className="bi bi-list-check me-2"></i> View Registrations
+                      </button>
+                      <button className="btn btn-outline-danger flex-fill" onClick={() => handleDeleteEvent(event._id)}>
+                        <i className="bi bi-trash me-1"></i> Delete
                       </button>
                     </div>
                   </div>
