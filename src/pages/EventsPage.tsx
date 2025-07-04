@@ -43,6 +43,9 @@ const EventsPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isLoading, setIsLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<EventType | null>(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -96,25 +99,27 @@ const EventsPage = () => {
     }
   };
 
-  const handleDeleteEvent = async (eventId: string) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this event?");
-    if (!confirmDelete) return;
+  const handleDeleteEvent = async () => {
+    if (!eventToDelete) return;
 
     try {
-      await axios.delete(`/events/${eventId}/delete`);
-      setEvents((prevEvents) => prevEvents.filter((event) => event._id !== eventId));
+      await axios.delete(`/events/${eventToDelete._id}/delete`);
+      setEvents((prevEvents) => prevEvents.filter((event) => event._id !== eventToDelete._id));
     } catch (err) {
       console.error("Failed to delete event:", err);
       alert("Failed to delete the event. Please try again.");
+    } finally {
+      setShowDeleteModal(false);
+      setEventToDelete(null);
     }
   };
+
+  const categories = ["All", ...Array.from(new Set(events.map(event => event.category)))];
 
   const filterEvents = () => {
     if (selectedCategory === "All") return events;
     return events.filter(event => event.category === selectedCategory);
   };
-
-  const categories = ["All", ...Array.from(new Set(events.map(event => event.category)))];
 
   return (
     <div className="container-fluid py-5" style={{ background: "linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%)", minHeight: "100vh" }}>
@@ -227,7 +232,13 @@ const EventsPage = () => {
                       <button className="btn flex-fill" style={{ backgroundColor: categoryColor, color: textColor }} onClick={() => handleViewRegistrations(event._id)}>
                         <i className="bi bi-list-check me-2"></i> View Registrations
                       </button>
-                      <button className="btn btn-outline-danger flex-fill" onClick={() => handleDeleteEvent(event._id)}>
+                      <button
+                        className="btn btn-outline-danger flex-fill"
+                        onClick={() => {
+                          setEventToDelete(event);
+                          setShowDeleteModal(true);
+                        }}
+                      >
                         <i className="bi bi-trash me-1"></i> Delete
                       </button>
                     </div>
@@ -301,6 +312,28 @@ const EventsPage = () => {
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
                 <button className="btn btn-primary" onClick={handleAddEvent}>Add Event</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow">
+              <div className="modal-header">
+                <h5 className="modal-title text-danger"><i className="bi bi-exclamation-triangle me-2"></i>Confirm Delete</h5>
+                <button type="button" className="btn-close" onClick={() => setShowDeleteModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                Are you sure you want to delete <strong>{eventToDelete?.title}</strong>? This action cannot be undone.
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+                <button className="btn btn-danger" onClick={handleDeleteEvent}>Delete</button>
               </div>
             </div>
           </div>

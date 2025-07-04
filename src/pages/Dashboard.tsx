@@ -56,6 +56,7 @@ const domainConfig: Record<string, { color: string; icon: string }> = {
 };
 
 const AdminDashboard: React.FC = () => {
+
   const [stats, setStats] = useState<Stats | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [recentAttendance, setRecentAttendance] = useState<AttendanceRecord[]>([]);
@@ -64,6 +65,7 @@ const AdminDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [refreshing, setRefreshing] = useState(false);
+  
 
   const fetchDashboardData = async () => {
     try {
