@@ -11,7 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import axios from "../axiosConfig";
 
-// Domain Configuration
+// Updated Domain Configuration (only webdev and mern)
 const domainConfig = {
   webdev: {
     name: "Web Development",
@@ -20,26 +20,12 @@ const domainConfig = {
     icon: "bi bi-globe2",
     description: "Front-end design & development"
   },
-  backend: {
-    name: "Backend Development",
+  mern: {
+    name: "MERN Stack Development",
     color: "#1cc88a",
     gradient: "linear-gradient(135deg, #1cc88a 0%, #13855c 100%)",
-    icon: "bi bi-server",
-    description: "Server-side programming & APIs"
-  },
-  react: {
-    name: "ReactJS Development",
-    color: "#6f42c1",
-    gradient: "linear-gradient(135deg, #6f42c1 0%, #4e2c94 100%)",
-    icon: "bi bi-code-square",
-    description: "Modern UI component development"
-  },
-  ml: {
-    name: "Machine Learning",
-    color: "#f6c23e",
-    gradient: "linear-gradient(135deg, #f6c23e 0%, #dda20a 100%)",
-    icon: "bi bi-cpu",
-    description: "AI & data science fundamentals"
+    icon: "bi bi-box-seam",
+    description: "Full-stack using MongoDB, Express, React, and Node"
   }
 } as const;
 
@@ -78,7 +64,9 @@ export default function ByteDashboard() {
         setTotalRegistrations(total);
 
         if (Object.keys(data).length > 0) {
-          const top = Object.keys(data).reduce((a, b) => (data[a as DomainKey] || 0) > (data[b as DomainKey] || 0) ? a : b) as DomainKey;
+          const top = Object.keys(data).reduce(
+            (a, b) => (data[a as DomainKey] || 0) > (data[b as DomainKey] || 0) ? a : b
+          ) as DomainKey;
           setTopDomain({
             name: domainConfig[top].name,
             count: data[top] || 0,
@@ -96,7 +84,7 @@ export default function ByteDashboard() {
     };
 
     fetchStats();
-    const intervalId = setInterval(fetchStats, 300000);
+    const intervalId = setInterval(fetchStats, 300000); // Refresh every 5 minutes
     return () => clearInterval(intervalId);
   }, []);
 
@@ -124,7 +112,7 @@ export default function ByteDashboard() {
       <Row className="g-3 mb-4">
         <Col xs={12} sm={6} lg={3}>
           <Card className="h-100 border-0 shadow-sm">
-            <Card.Body style={{ background: "linear-gradient(135deg, #4e73df11 0%, #4e73df22 100%)" }}>
+            <Card.Body style={{ background: "#4e73df11" }}>
               <div className="d-flex align-items-center">
                 <div className="icon-container me-3" style={{ background: "#4e73df", padding: "10px", borderRadius: "8px" }}>
                   <i className="bi bi-people-fill text-white"></i>
@@ -140,7 +128,7 @@ export default function ByteDashboard() {
 
         <Col xs={12} sm={6} lg={3}>
           <Card className="h-100 border-0 shadow-sm">
-            <Card.Body style={{ background: "linear-gradient(135deg, #1cc88a11 0%, #1cc88a22 100%)" }}>
+            <Card.Body style={{ background: "#1cc88a11" }}>
               <div className="d-flex align-items-center">
                 <div className="icon-container me-3" style={{ background: "#1cc88a", padding: "10px", borderRadius: "8px" }}>
                   <i className="bi bi-collection-fill text-white"></i>
@@ -156,7 +144,7 @@ export default function ByteDashboard() {
 
         <Col xs={12} sm={6} lg={3}>
           <Card className="h-100 border-0 shadow-sm">
-            <Card.Body style={{ background: "linear-gradient(135deg, #6f42c111 0%, #6f42c122 100%)" }}>
+            <Card.Body style={{ background: "#6f42c111" }}>
               <div className="d-flex align-items-center">
                 <div className="icon-container me-3" style={{ background: "#6f42c1", padding: "10px", borderRadius: "8px" }}>
                   <i className="bi bi-clock-history text-white"></i>
@@ -172,7 +160,7 @@ export default function ByteDashboard() {
 
         <Col xs={12} sm={6} lg={3}>
           <Card className="h-100 border-0 shadow-sm">
-            <Card.Body style={{ background: "linear-gradient(135deg, #f6c23e11 0%, #f6c23e22 100%)" }}>
+            <Card.Body style={{ background: "#f6c23e11" }}>
               <div className="d-flex align-items-center">
                 <div className="icon-container me-3" style={{ background: "#f6c23e", padding: "10px", borderRadius: "8px" }}>
                   <i className="bi bi-trophy-fill text-white"></i>

@@ -11,6 +11,8 @@ interface ParticipantType {
   email: string;
   semester: string;
   class: string;
+  paymentVerified: boolean;
+  userId: string;
 }
 
 const ByteParticipants: React.FC = () => {
@@ -30,8 +32,7 @@ const ByteParticipants: React.FC = () => {
       try {
         const res = await axios.get(`/byte/participants?domain=${courseId}`);
         if (Array.isArray(res.data)) {
-          // Normalize values while setting
-          const cleanedData = res.data.map((p: ParticipantType) => ({
+          const cleanedData = res.data.map((p: any) => ({
             ...p,
             semester: p.semester?.toString().trim(),
             class: p.class?.toString().trim()
@@ -80,6 +81,22 @@ const ByteParticipants: React.FC = () => {
 
     setFilteredParticipants(filtered);
   }, [search, semesterFilter, classFilter, participants]);
+
+  // ✅ Toggle payment verification status
+  const handleTogglePayment = async (userId: string, newStatus: boolean) => {
+    try {
+      const res = await axios.post('/byte/updatePaymentStatus', { userId, status: newStatus });
+      const updatedList = participants.map(p =>
+        p.userId === userId ? { ...p, paymentVerified: newStatus } : p
+      );
+      setParticipants(updatedList);
+      setFilteredParticipants(updatedList);
+      alert(res.data.message);
+    } catch (error) {
+      console.error("Payment status update failed:", error);
+      alert("Failed to update payment status.");
+    }
+  };
 
   const semesterData = uniqueSemesters.map(sem => ({
     name: sem,
@@ -146,6 +163,8 @@ const ByteParticipants: React.FC = () => {
                 <th style={{ padding: '12px', textAlign: 'left' }}>Email</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Semester</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Class</th>
+                <th style={{ padding: '12px', textAlign: 'left' }}>Payment Status</th>
+                <th style={{ padding: '12px', textAlign: 'left' }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -155,6 +174,24 @@ const ByteParticipants: React.FC = () => {
                   <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>{participant.email}</td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>{participant.semester}</td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>{participant.class}</td>
+                  <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>
+                    {participant.paymentVerified ? '✅ Verified' : '❌ Not Verified'}
+                  </td>
+                  <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>
+                    <button
+                      onClick={() => handleTogglePayment(participant.userId, !participant.paymentVerified)}
+                      style={{
+                        padding: '6px 12px',
+                        cursor: 'pointer',
+                        backgroundColor: participant.paymentVerified ? '#e74c3c' : '#2ecc71',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px'
+                      }}
+                    >
+                      {participant.paymentVerified ? 'Unverify' : 'Verify'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -165,7 +202,6 @@ const ByteParticipants: React.FC = () => {
       {/* Charts */}
       <h3 style={{ marginTop: '40px' }}>Visualization</h3>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '40px', justifyContent: 'center' }}>
-        {/* Bar Chart: Semester */}
         <div style={{ width: '100%', maxWidth: '500px', height: '300px' }}>
           <h4>Participants by Semester</h4>
           <ResponsiveContainer width="100%" height="100%">
@@ -180,7 +216,6 @@ const ByteParticipants: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Pie Chart: Class */}
         <div style={{ width: '100%', maxWidth: '400px', height: '300px' }}>
           <h4>Participants by Class</h4>
           <ResponsiveContainer width="100%" height="100%">

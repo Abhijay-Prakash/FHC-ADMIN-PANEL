@@ -262,7 +262,7 @@ const EventsPage = () => {
           </div>
         )}
       </div>
-
+          
       {/* Add Event Modal */}
       {showAddModal && (
         <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
