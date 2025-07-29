@@ -9,6 +9,7 @@ import {
 interface ParticipantType {
   name: string;
   email: string;
+  phone: string;
   semester: string;
   class: string;
   paymentVerified: boolean;
@@ -33,9 +34,13 @@ const ByteParticipants: React.FC = () => {
         const res = await axios.get(`/byte/participants?domain=${courseId}`);
         if (Array.isArray(res.data)) {
           const cleanedData = res.data.map((p: any) => ({
-            ...p,
-            semester: p.semester?.toString().trim(),
-            class: p.class?.toString().trim()
+            name: p.name || '',
+            email: p.email || '',
+            phone: p.phone || '',
+            semester: p.semester?.toString().trim() || '',
+            class: p.class?.toString().trim() || '',
+            paymentVerified: !!p.paymentVerified,
+            userId: p.userId || '',
           }));
           setParticipants(cleanedData);
           setFilteredParticipants(cleanedData);
@@ -54,8 +59,8 @@ const ByteParticipants: React.FC = () => {
     fetchParticipants();
   }, [courseId]);
 
-  const uniqueSemesters = Array.from(new Set(participants.map(p => p.semester?.trim()))).sort();
-  const uniqueClasses = Array.from(new Set(participants.map(p => p.class?.trim()))).sort();
+  const uniqueSemesters = Array.from(new Set(participants.map(p => p.semester))).sort();
+  const uniqueClasses = Array.from(new Set(participants.map(p => p.class))).sort();
 
   useEffect(() => {
     let filtered = [...participants];
@@ -63,26 +68,26 @@ const ByteParticipants: React.FC = () => {
     if (search.trim() !== '') {
       filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.email.toLowerCase().includes(search.toLowerCase())
+        p.email.toLowerCase().includes(search.toLowerCase()) ||
+        p.phone.toLowerCase().includes(search.toLowerCase())
       );
     }
 
     if (semesterFilter.trim() !== '') {
       filtered = filtered.filter(p =>
-        p.semester?.toLowerCase().trim() === semesterFilter.toLowerCase().trim()
+        p.semester.toLowerCase().trim() === semesterFilter.toLowerCase().trim()
       );
     }
 
     if (classFilter.trim() !== '') {
       filtered = filtered.filter(p =>
-        p.class?.toLowerCase().trim() === classFilter.toLowerCase().trim()
+        p.class.toLowerCase().trim() === classFilter.toLowerCase().trim()
       );
     }
 
     setFilteredParticipants(filtered);
   }, [search, semesterFilter, classFilter, participants]);
 
-  // ✅ Toggle payment verification status
   const handleTogglePayment = async (userId: string, newStatus: boolean) => {
     try {
       const res = await axios.post('/byte/updatePaymentStatus', { userId, status: newStatus });
@@ -100,12 +105,12 @@ const ByteParticipants: React.FC = () => {
 
   const semesterData = uniqueSemesters.map(sem => ({
     name: sem,
-    count: participants.filter(p => p.semester?.trim() === sem).length
+    count: participants.filter(p => p.semester === sem).length
   }));
 
   const classData = uniqueClasses.map(cls => ({
     name: cls,
-    count: participants.filter(p => p.class?.trim() === cls).length
+    count: participants.filter(p => p.class === cls).length
   }));
 
   const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1', '#a4de6c', '#d0ed57'];
@@ -122,7 +127,7 @@ const ByteParticipants: React.FC = () => {
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
         <input
           type="text"
-          placeholder="Search by name or email"
+          placeholder="Search by name, email, or phone"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ padding: '8px', flex: '1', minWidth: '200px' }}
@@ -161,6 +166,7 @@ const ByteParticipants: React.FC = () => {
               <tr>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Name</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Email</th>
+                <th style={{ padding: '12px', textAlign: 'left' }}>Phone</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Semester</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Class</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Payment Status</th>
@@ -172,6 +178,7 @@ const ByteParticipants: React.FC = () => {
                 <tr key={index}>
                   <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>{participant.name}</td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>{participant.email}</td>
+                  <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>{participant.phone}</td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>{participant.semester}</td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>{participant.class}</td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>
