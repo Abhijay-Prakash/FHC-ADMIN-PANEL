@@ -293,6 +293,7 @@ const EventsPage = () => {
                   <div className="col-md-6">
                     <select className="form-select" value={newEvent.category || 'Workshop'} onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value })}>
                       <option>Workshop</option>
+                      <option>Event</option>
                       <option>Webinar</option>
                       <option>Conference</option>
                       <option>Meetup</option>
