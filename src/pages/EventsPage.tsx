@@ -17,6 +17,7 @@ interface EventType {
 
 const categoryColors: { [key: string]: string } = {
   Workshop: "#6366F1",
+  Event: "#3B82F6",
   Webinar: "#EC4899",
   Conference: "#8B5CF6",
   Meetup: "#14B8A6",
