@@ -5,17 +5,22 @@ import {
   ThreeDotsVertical,  
   Telephone, 
   Envelope, 
-  Grid3x3, 
-  PersonBadge
+  Calendar3,
+  PersonBadge,
+  
 } from 'react-bootstrap-icons';
 
+// Updated interface to match your actual API
 interface Member {
   _id: string;
   name: string;
   email: string;
   phone: string;
-  domain: string;
+  profilePic?: string;
+  semester: number;
+  class: string;
   role: string;
+  createdAt: string; // ISO date string
 }
 
 const ViewMembers: React.FC = () => {
@@ -24,7 +29,16 @@ const ViewMembers: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [animation, setAnimation] = useState<boolean>(false);
 
-  // Fetch members from backend
+  // Format date like "29 June 2025"
+  const formatJoinedDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
   useEffect(() => {
     const fetchMembers = async () => {
       setLoading(true);
@@ -43,7 +57,6 @@ const ViewMembers: React.FC = () => {
     fetchMembers();
   }, []);
 
-  // Handle role filter
   const handleRoleFilter = (role: string) => {
     setAnimation(false);
     setTimeout(() => {
@@ -55,7 +68,6 @@ const ViewMembers: React.FC = () => {
   const filteredMembers =
     selectedRole === 'all' ? members : members.filter(member => member.role === selectedRole);
 
-  // Update user role
   const updateMemberRole = async (memberId: string, newRole: string) => {
     try {
       await axios.patch(`/users/${memberId}/role`, { newRole }, { withCredentials: true });
@@ -68,37 +80,18 @@ const ViewMembers: React.FC = () => {
     }
   };
 
-  // Get role-based styling
   const getRoleStyle = (role: string) => {
     switch (role) {
       case 'admin':
-        return {
-          bg: 'bg-gradient bg-danger',
-          text: 'text-white',
-          border: 'border-danger'
-        };
+        return { bg: 'bg-gradient bg-danger', text: 'text-white', border: 'border-danger' };
       case 'execom':
-        return {
-          bg: 'bg-gradient bg-primary',
-          text: 'text-white',
-          border: 'border-primary'
-        };
+        return { bg: 'bg-gradient bg-primary', text: 'text-white', border: 'border-primary' };
       case 'member':
-        return {
-          bg: 'bg-gradient bg-info',
-          text: 'text-dark',
-          border: 'border-info'
-        };
       default:
-        return {
-          bg: '',
-          text: '',
-          border: ''
-        };
+        return { bg: 'bg-gradient bg-info', text: 'text-dark', border: 'border-info' };
     }
   };
 
-  // Role badges with improved visual design
   const RoleBadge = ({ role }: { role: string }) => {
     const style = getRoleStyle(role);
     return (
@@ -129,28 +122,16 @@ const ViewMembers: React.FC = () => {
         
         <div className="d-flex justify-content-center mb-4">
           <div className="btn-group shadow-sm" role="group">
-            <button 
-              className={`btn ${selectedRole === 'all' ? 'btn-dark' : 'btn-outline-dark'} px-4`} 
-              onClick={() => handleRoleFilter('all')}
-            >
+            <button className={`btn ${selectedRole === 'all' ? 'btn-dark' : 'btn-outline-dark'} px-4`} onClick={() => handleRoleFilter('all')}>
               All
             </button>
-            <button 
-              className={`btn ${selectedRole === 'admin' ? 'btn-danger' : 'btn-outline-danger'} px-4`} 
-              onClick={() => handleRoleFilter('admin')}
-            >
+            <button className={`btn ${selectedRole === 'admin' ? 'btn-danger' : 'btn-outline-danger'} px-4`} onClick={() => handleRoleFilter('admin')}>
               Admins
             </button>
-            <button 
-              className={`btn ${selectedRole === 'execom' ? 'btn-primary' : 'btn-outline-primary'} px-4`} 
-              onClick={() => handleRoleFilter('execom')}
-            >
+            <button className={`btn ${selectedRole === 'execom' ? 'btn-primary' : 'btn-outline-primary'} px-4`} onClick={() => handleRoleFilter('execom')}>
               Execom
             </button>
-            <button 
-              className={`btn ${selectedRole === 'member' ? 'btn-info' : 'btn-outline-info'} px-4`} 
-              onClick={() => handleRoleFilter('member')}
-            >
+            <button className={`btn ${selectedRole === 'member' ? 'btn-info' : 'btn-outline-info'} px-4`} onClick={() => handleRoleFilter('member')}>
               Members
             </button>
           </div>
@@ -160,7 +141,7 @@ const ViewMembers: React.FC = () => {
           {filteredMembers.map((member, index) => {
             const style = getRoleStyle(member.role);
             const animationDelay = `${index * 0.1}s`;
-            
+
             return (
               <div 
                 className="col-md-6 col-lg-4" 
@@ -175,12 +156,23 @@ const ViewMembers: React.FC = () => {
                 <div className={`card h-100 shadow border-start border-5 ${style.border} hover-shadow`}>
                   <div className="card-body position-relative p-4">
                     <div className="d-flex align-items-center mb-3">
-                      <div className={`avatar-placeholder rounded-circle me-3 d-flex align-items-center justify-content-center ${style.bg}`} style={{ width: '48px', height: '48px' }}>
-                        <span className="fw-bold text-white">{member.name.charAt(0).toUpperCase()}</span>
-                      </div>
+                      {member.profilePic ? (
+                        <img 
+                          src={member.profilePic} 
+                          alt={member.name}
+                          className="rounded-circle me-3"
+                          style={{ width: '48px', height: '48px', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <div className={`rounded-circle me-3 d-flex align-items-center justify-content-center ${style.bg}`} style={{ width: '48px', height: '48px' }}>
+                          <span className="fw-bold text-white">{member.name.charAt(0).toUpperCase()}</span>
+                        </div>
+                      )}
                       <div>
                         <h5 className="card-title mb-0 fw-bold">{member.name}</h5>
-                        <small className="text-muted">{member.domain}</small>
+                        <small className="text-muted fw-bold">
+                          S{member.semester} {member.class}
+                        </small>
                       </div>
                     </div>
                     
@@ -191,15 +183,17 @@ const ViewMembers: React.FC = () => {
                           {member.email}
                         </a>
                       </p>
+
                       <p className="card-text mb-2 d-flex align-items-center">
                         <Telephone className="me-2 text-secondary" />
                         <a href={`tel:${member.phone}`} className="text-decoration-none text-dark">
                           {member.phone}
                         </a>
                       </p>
-                      <p className="card-text mb-2 d-flex align-items-center">
-                        <Grid3x3 className="me-2 text-secondary" />
-                        {member.domain}
+
+                      <p className="card-text mb-2 d-flex align-items-center text-muted">
+                        <Calendar3 className="me-2 text-secondary" />
+                        Joined {formatJoinedDate(member.createdAt)}
                       </p>
                     </div>
                     
@@ -212,22 +206,13 @@ const ViewMembers: React.FC = () => {
                         </Dropdown.Toggle>
                         <Dropdown.Menu className="shadow border-0">
                           <h6 className="dropdown-header">Change Role</h6>
-                          <Dropdown.Item 
-                            onClick={() => updateMemberRole(member._id, 'admin')}
-                            className={member.role === 'admin' ? 'active' : ''}
-                          >
+                          <Dropdown.Item onClick={() => updateMemberRole(member._id, 'admin')}>
                             <span className="badge bg-danger me-2"></span> Admin
                           </Dropdown.Item>
-                          <Dropdown.Item 
-                            onClick={() => updateMemberRole(member._id, 'execom')}
-                            className={member.role === 'execom' ? 'active' : ''}
-                          >
+                          <Dropdown.Item onClick={() => updateMemberRole(member._id, 'execom')}>
                             <span className="badge bg-primary me-2"></span> Execom
                           </Dropdown.Item>
-                          <Dropdown.Item 
-                            onClick={() => updateMemberRole(member._id, 'member')}
-                            className={member.role === 'member' ? 'active' : ''}
-                          >
+                          <Dropdown.Item onClick={() => updateMemberRole(member._id, 'member')}>
                             <span className="badge bg-info me-2"></span> Member
                           </Dropdown.Item>
                         </Dropdown.Menu>
@@ -251,4 +236,3 @@ const ViewMembers: React.FC = () => {
 };
 
 export default ViewMembers;
-

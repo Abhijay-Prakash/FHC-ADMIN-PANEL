@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../axiosConfig';
+import { 
+  Calendar3, 
+  Clock, 
+  GeoAltFill, 
+  Tag, 
+  PlusCircle, 
+  Trash3, 
+  ListCheck 
+} from 'react-bootstrap-icons';
 
 interface EventType {
   _id: string;
@@ -10,12 +19,13 @@ interface EventType {
   time: string;
   location: string;
   capacity: number;
+  registeredUsers: string[];
   tags: string[];
   category: string;
   registrationStatus?: string;
 }
 
-const categoryColors: { [key: string]: string } = {
+const categoryColors: Record<string, string> = {
   Workshop: "#6366F1",
   Event: "#3B82F6",
   Webinar: "#EC4899",
@@ -26,26 +36,25 @@ const categoryColors: { [key: string]: string } = {
   Other: "#6B7280",
 };
 
-const getCategoryColor = (category: string) => {
-  return categoryColors[category] || categoryColors.Other;
-};
-
-const getTextColor = (bgColor: string) => {
-  const r = parseInt(bgColor.slice(1, 3), 16);
-  const g = parseInt(bgColor.slice(3, 5), 16);
-  const b = parseInt(bgColor.slice(5, 7), 16);
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  return brightness > 125 ? "#000000" : "#FFFFFF";
-};
-
 const EventsPage = () => {
   const [events, setEvents] = useState<EventType[]>([]);
-  const [newEvent, setNewEvent] = useState<any>({});
-  const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isLoading, setIsLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<EventType | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState(""); // ← NEW: Anti-accident protection
+
+  const [newEvent, setNewEvent] = useState<any>({
+    title: '',
+    description: '',
+    category: 'Event',
+    date: '',
+    time: '09:00',
+    location: '',
+    capacity: 50,
+    tags: ''
+  });
 
   const navigate = useNavigate();
 
@@ -58,7 +67,7 @@ const EventsPage = () => {
     try {
       const res = await axios.get('/events/getEvents', { withCredentials: true });
       setEvents(res.data);
-      setTimeout(() => setIsLoading(false), 500);
+      setTimeout(() => setIsLoading(false), 400);
     } catch (error) {
       console.error(error);
       setIsLoading(false);
@@ -66,181 +75,166 @@ const EventsPage = () => {
   };
 
   const handleAddEvent = async () => {
-    const formattedEvent = {
-      ...newEvent,
-      date: new Date(newEvent.date).toISOString(),
-      category: newEvent.category || "Workshop",
-      tags: newEvent.tags ? newEvent.tags.split(',').map((tag: string) => tag.trim()) : [],
+    const payload = {
+      title: newEvent.title.trim(),
+      description: newEvent.description.trim() || "",
+      category: newEvent.category,
+      date: newEvent.date,
+      time: newEvent.time || "09:00",
+      location: newEvent.location.trim() || "TBA",
+      capacity: Number(newEvent.capacity) || 50,
+      tags: newEvent.tags ? newEvent.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : []
     };
 
+    if (!payload.title || !payload.date || !payload.category) {
+      alert("Title, Date, and Category are required!");
+      return;
+    }
+
     try {
-      await axios.post('/events/addEvent', formattedEvent);
+      await axios.post('/events/addEvent', payload, { withCredentials: true });
       setShowAddModal(false);
-      setNewEvent({});
+      setNewEvent({ title: '', description: '', category: 'Event', date: '', time: '09:00', location: '', capacity: 50, tags: '' });
       fetchEvents();
-    } catch (error) {
-      console.error(error);
+      alert("Event created successfully!");
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Failed to create event");
     }
   };
 
-  const handleViewRegistrations = (eventId: string) => {
-    navigate(`/events/registrations/${eventId}`);
-  };
-
-  const handleStatusChange = async (eventId: string, newStatus: string) => {
+  const handleStatusChange = async (eventId: string, status: string) => {
     try {
-      await axios.put(`/events/${eventId}/status`, { status: newStatus });
-      setEvents((prev) =>
-        prev.map((event) =>
-          event._id === eventId ? { ...event, registrationStatus: newStatus } : event
-        )
-      );
+      await axios.put(`/events/${eventId}/status`, { status });
+      setEvents(prev => prev.map(e => e._id === eventId ? { ...e, registrationStatus: status } : e));
     } catch (err) {
-      console.error('Failed to update status:', err);
+      console.error(err);
     }
   };
 
   const handleDeleteEvent = async () => {
     if (!eventToDelete) return;
-
     try {
       await axios.delete(`/events/${eventToDelete._id}/delete`);
-      setEvents((prevEvents) => prevEvents.filter((event) => event._id !== eventToDelete._id));
-    } catch (err) {
-      console.error("Failed to delete event:", err);
-      alert("Failed to delete the event. Please try again.");
-    } finally {
+      setEvents(prev => prev.filter(e => e._id !== eventToDelete._id));
       setShowDeleteModal(false);
       setEventToDelete(null);
+      setDeleteConfirmText(""); // Reset
+      alert("Event deleted successfully");
+    } catch (err) {
+      alert("Failed to delete event");
     }
   };
 
-  const categories = ["All", ...Array.from(new Set(events.map(event => event.category)))];
-
-  const filterEvents = () => {
-    if (selectedCategory === "All") return events;
-    return events.filter(event => event.category === selectedCategory);
+  const openDeleteModal = (event: EventType) => {
+    setEventToDelete(event);
+    setDeleteConfirmText("");
+    setShowDeleteModal(true);
   };
 
+  const categories = ["All", ...Array.from(new Set(events.map(e => e.category)))];
+  const filteredEvents = selectedCategory === "All" ? events : events.filter(e => e.category === selectedCategory);
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
+        <div className="spinner-grow text-primary" style={{ width: '4rem', height: '4rem' }}>
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container-fluid py-5" style={{ background: "linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%)", minHeight: "100vh" }}>
-      <div className="container">
-        <div className="text-center mb-5">
-          <h1 className="display-4 fw-bold" style={{ color: "#4F46E5", textShadow: "2px 2px 4px rgba(0,0,0,0.1)" }}>
-            <i className="bi bi-calendar-event me-2"></i>
-            Events Admin Panel
-          </h1>
-          <p className="lead text-muted">Manage your events with style</p>
-        </div>
-
-        <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-          <div className="btn-group mb-3 mb-md-0" role="group">
-            {categories.map(category => (
-              <button
-                key={category}
-                type="button"
-                className={`btn ${selectedCategory === category ? 'btn-primary' : 'btn-outline-primary'}`}
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category}
-              </button>
-            ))}
+    <>
+      <div className="bg-gradient py-5" style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", minHeight: "100vh" }}>
+        <div className="container">
+          <div className="text-center text-white mb-5 pt-4">
+            <h1 className="display-4 fw-bold">Events Management</h1>
+            <p className="lead opacity-90">Create, manage, and track all your events</p>
           </div>
 
-          <button
-            className="btn btn-primary btn-lg shadow-sm"
-            onClick={() => setShowAddModal(true)}
-            style={{
-              background: "linear-gradient(45deg, #4F46E5, #7C3AED)",
-              border: "none",
-              transition: "transform 0.2s, box-shadow 0.2s"
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 10px 15px rgba(0, 0, 0, 0.1)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
-            }}
-          >
-            <i className="bi bi-plus-circle me-2"></i> Add New Event
-          </button>
-        </div>
-
-        {isLoading ? (
-          <div className="text-center py-5">
-            <div className="spinner-border text-primary" role="status" style={{ width: "3rem", height: "3rem" }}>
-              <span className="visually-hidden">Loading...</span>
+          <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div className="btn-group shadow-lg bg-white rounded-pill overflow-hidden">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  className={`btn ${selectedCategory === cat ? 'btn-primary' : 'btn-outline-secondary'} fw-semibold px-4`}
+                  onClick={() => setSelectedCategory(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
+
+            <button className="btn btn-light btn-lg shadow-lg fw-bold text-primary" onClick={() => setShowAddModal(true)}>
+              <PlusCircle className="me-2" /> Add New Event
+            </button>
           </div>
-        ) : (
+
           <div className="row g-4">
-            {filterEvents().map((event) => {
-              const categoryColor = getCategoryColor(event.category);
-              const textColor = getTextColor(categoryColor);
+            {filteredEvents.map((event, idx) => {
+              const attendees = event.registeredUsers?.length || 0;
+              const percentage = event.capacity > 0 ? (attendees / event.capacity) * 100 : 0;
+              const color = categoryColors[event.category] || "#6B7280";
 
               return (
-                <div key={event._id} className="col-md-6 col-lg-4">
-                  <div className="card h-100 border-0 shadow">
-                    <div className="card-header py-3" style={{ backgroundColor: categoryColor, color: textColor }}>
-                      <h5 className="m-0 fw-bold">{event.title}</h5>
+                <div key={event._id} className="col-md-6 col-lg-4"
+                  style={{ animation: `fadeUp 0.6s ease-out forwards`, animationDelay: `${idx * 0.1}s`, opacity: 0 }}>
+                  <div className="card h-100 border-0 shadow-lg rounded-3 overflow-hidden hover-lift">
+                    <div className="card-header text-white fw-bold py-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: color }}>
+                      <span className="text-truncate me-2">{event.title}</span>
+                      <span className="badge bg-white text-dark">{event.category}</span>
                     </div>
-                    <div className="card-body">
-                      <div className="mb-3">
-                        <span className="badge" style={{ backgroundColor: categoryColor, color: textColor }}>
-                          {event.category}
-                        </span>
-                        <span className="ms-2 text-muted">
-                          <i className="bi bi-people-fill me-1"></i>
-                          Capacity: {event.capacity}
-                        </span>
+
+                    <div className="card-body bg-white">
+                      <p className="text-muted mb-4">{event.description || "No description"}</p>
+
+                      <div className="text-center mb-4">
+                        <div className="position-relative d-inline-block">
+                          <svg width="100" height="100" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" stroke="#e0e0e0" strokeWidth="10" fill="none" />
+                            <circle cx="50" cy="50" r="45" stroke={color} strokeWidth="10" fill="none"
+                              strokeDasharray={`${percentage * 2.83} 283`} transform="rotate(-90 50 50)" strokeLinecap="round" />
+                          </svg>
+                          <div className="position-absolute top-50 start-50 translate-middle text-center">
+                            <div className="fw-bold fs-4">{attendees}</div>
+                            <small className="text-muted">of {event.capacity}</small>
+                          </div>
+                        </div>
+                        <div className="mt-2 fw-bold text-dark">
+                          {percentage >= 100 ? "FULL" : `${Math.round(percentage)}% Filled`}
+                        </div>
                       </div>
 
-                      <div className="mb-3">
-                        <label className="form-label fw-semibold">Registration Status:</label>
-                        <select
-                          className="form-select"
-                          value={event.registrationStatus || 'Open'}
-                          onChange={(e) => handleStatusChange(event._id, e.target.value)}
-                        >
-                          {['Upcoming', 'Open', 'Closed', 'Full', 'Completed', 'Cancelled'].map((status) => (
-                            <option key={status} value={status}>{status}</option>
-                          ))}
-                        </select>
+                      <div className="row g-3 text-muted small">
+                        <div className="col-12 d-flex align-items-center"><Calendar3 className="me-2 text-primary" size={18} /> {formatDate(event.date)}</div>
+                        <div className="col-12 d-flex align-items-center"><Clock className="me-2 text-primary" size={18} /> {event.time}</div>
+                        <div className="col-12 d-flex align-items-center"><GeoAltFill className="me-2 text-primary" size={18} /> {event.location}</div>
                       </div>
 
-                      <p className="card-text mb-3">{event.description}</p>
-                      <div className="d-flex align-items-center mb-3">
-                        <i className="bi bi-calendar3 text-primary me-2"></i>
-                        <span>{new Date(event.date).toLocaleDateString()}</span>
-                        <i className="bi bi-clock text-primary ms-3 me-2"></i>
-                        <span>{event.time}</span>
-                      </div>
-                      <div className="d-flex align-items-center mb-3">
-                        <i className="bi bi-geo-alt text-primary me-2"></i>
-                        <span>{event.location}</span>
-                      </div>
-                      <div className="mb-3">
-                        {event.tags.map((tag, idx) => (
-                          <span key={idx} className="badge me-1 mb-1" style={{ backgroundColor: `${categoryColor}40`, color: categoryColor }}>
-                            #{tag}
+                      <div className="mt-3">
+                        {event.tags?.map((tag, i) => (
+                          <span key={i} className="badge me-1 mb-1" style={{ backgroundColor: `${color}30`, color }}>
+                            <Tag size={12} className="me-1" />{tag}
                           </span>
                         ))}
                       </div>
                     </div>
-                    <div className="card-footer bg-white border-0 pb-3 d-flex gap-2">
-                      <button className="btn flex-fill" style={{ backgroundColor: categoryColor, color: textColor }} onClick={() => handleViewRegistrations(event._id)}>
-                        <i className="bi bi-list-check me-2"></i> View Registrations
+
+                    <div className="card-footer bg-light border-0 d-flex gap-2">
+                      <button className="btn btn-outline-primary flex-fill" onClick={() => navigate(`/events/registrations/${event._id}`)}>
+                        <ListCheck className="me-1" /> View ({attendees})
                       </button>
-                      <button
-                        className="btn btn-outline-danger flex-fill"
-                        onClick={() => {
-                          setEventToDelete(event);
-                          setShowDeleteModal(true);
-                        }}
-                      >
-                        <i className="bi bi-trash me-1"></i> Delete
+                      <select className="form-select form-select-sm" value={event.registrationStatus || "Open"}
+                        onChange={(e) => handleStatusChange(event._id, e.target.value)} style={{ maxWidth: '140px' }}>
+                        {['Upcoming', 'Open', 'Closed', 'Full', 'Completed', 'Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                      <button className="btn btn-outline-danger" onClick={() => openDeleteModal(event)}>
+                        <Trash3 size={16} />
                       </button>
                     </div>
                   </div>
@@ -248,100 +242,133 @@ const EventsPage = () => {
               );
             })}
           </div>
-        )}
-
-        {!isLoading && filterEvents().length === 0 && (
-          <div className="text-center py-5">
-            <div style={{ color: "#6B7280", fontSize: "4rem" }}>
-              <i className="bi bi-calendar-x"></i>
-            </div>
-            <h3 className="mt-3">No events found</h3>
-            <p className="text-muted">No events match your current filter or none have been added yet.</p>
-            <button className="btn btn-outline-primary mt-3" onClick={() => setSelectedCategory("All")}>
-              Reset filters
-            </button>
-          </div>
-        )}
+        </div>
       </div>
-          
-      {/* Add Event Modal */}
+
+      {/* Create Event Modal */}
       {showAddModal && (
-        <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content border-0 shadow-lg" style={{ borderRadius: "15px" }}>
-              <div className="modal-header">
-                <h5 className="modal-title">Add New Event</h5>
-                <button type="button" className="btn-close" onClick={() => setShowAddModal(false)}></button>
+        <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div className="modal-content rounded-4 shadow-lg border-0">
+              <div className="modal-header bg-primary text-white border-0">
+                <h4 className="modal-title fw-bold"><PlusCircle className="me-2" /> Create New Event</h4>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setShowAddModal(false)}></button>
               </div>
-              <div className="modal-body">
+              <div className="modal-body p-4">
                 <div className="row g-3">
                   <div className="col-md-6">
-                    <input type="text" className="form-control" placeholder="Title" value={newEvent.title || ''} onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })} />
+                    <label className="form-label fw-semibold">Title <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control form-control-lg" placeholder="Event title"
+                      value={newEvent.title || ''} onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })} />
                   </div>
                   <div className="col-md-6">
-                    <input type="text" className="form-control" placeholder="Location" value={newEvent.location || ''} onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })} />
+                    <label className="form-label fw-semibold">Location</label>
+                    <input type="text" className="form-control form-control-lg" placeholder="Main Seminar Hall"
+                      value={newEvent.location || ''} onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })} />
                   </div>
                   <div className="col-md-6">
-                    <input type="date" className="form-control" value={newEvent.date || ''} onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })} />
+                    <label className="form-label fw-semibold">Date <span className="text-danger">*</span></label>
+                    <input type="date" className="form-control form-control-lg"
+                      value={newEvent.date || ''} onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })} />
                   </div>
                   <div className="col-md-6">
-                    <input type="time" className="form-control" value={newEvent.time || ''} onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })} />
+                    <label className="form-label fw-semibold">Time</label>
+                    <input type="time" className="form-control form-control-lg"
+                      value={newEvent.time || '09:00'} onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })} />
                   </div>
                   <div className="col-md-6">
-                    <input type="number" className="form-control" placeholder="Capacity" value={newEvent.capacity || ''} onChange={(e) => setNewEvent({ ...newEvent, capacity: parseInt(e.target.value) })} />
+                    <label className="form-label fw-semibold">Capacity</label>
+                    <input type="number" className="form-control form-control-lg" placeholder="50"
+                      value={newEvent.capacity || ''} onChange={(e) => setNewEvent({ ...newEvent, capacity: e.target.value })} />
                   </div>
                   <div className="col-md-6">
-                    <select className="form-select" value={newEvent.category || 'Workshop'} onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value })}>
-                      <option>Workshop</option>
-                      <option>Event</option>
-                      <option>Webinar</option>
-                      <option>Conference</option>
-                      <option>Meetup</option>
-                      <option>Seminar</option>
-                      <option>Training</option>
-                      <option>Meeting</option>
-                      <option>Other</option>
+                    <label className="form-label fw-semibold">Category <span className="text-danger">*</span></label>
+                    <select className="form-select form-select-lg"
+                      value={newEvent.category} onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value })}>
+                      {Object.keys(categoryColors).map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="col-12">
-                    <textarea className="form-control" placeholder="Description" rows={3} value={newEvent.description || ''} onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}></textarea>
+                    <label className="form-label fw-semibold">Description</label>
+                    <textarea className="form-control" rows={3} placeholder="What is this event about?"
+                      value={newEvent.description || ''} onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}></textarea>
                   </div>
                   <div className="col-12">
-                    <input type="text" className="form-control" placeholder="Tags (comma separated)" value={newEvent.tags || ''} onChange={(e) => setNewEvent({ ...newEvent, tags: e.target.value })} />
+                    <label className="form-label fw-semibold">Tags (comma separated)</label>
+                    <input type="text" className="form-control" placeholder="volunteering, tech, workshop"
+                      value={newEvent.tags || ''} onChange={(e) => setNewEvent({ ...newEvent, tags: e.target.value })} />
                   </div>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
-                <button className="btn btn-primary" onClick={handleAddEvent}>Add Event</button>
+              <div className="modal-footer border-0 pb-4">
+                <button className="btn btn-secondary btn-lg px-4" onClick={() => setShowAddModal(false)}>Cancel</button>
+                <button className="btn btn-primary btn-lg px-5" onClick={handleAddEvent}>Create Event</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+      {/* SECURE DELETE MODAL – Cannot delete by mistake */}
+      {showDeleteModal && eventToDelete && (
+        <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
           <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow">
-              <div className="modal-header">
-                <h5 className="modal-title text-danger"><i className="bi bi-exclamation-triangle me-2"></i>Confirm Delete</h5>
-                <button type="button" className="btn-close" onClick={() => setShowDeleteModal(false)}></button>
+            <div className="modal-content rounded-4 shadow-lg border-0">
+              <div className="modal-header bg-danger text-white border-0">
+                <h5 className="modal-title fw-bold">Delete Event Permanently?</h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setShowDeleteModal(false)}></button>
               </div>
-              <div className="modal-body">
-                Are you sure you want to delete <strong>{eventToDelete?.title}</strong>? This action cannot be undone.
+              <div className="modal-body text-center py-5">
+                <h4 className="text-danger mb-3">{eventToDelete.title}</h4>
+                <p className="text-muted mb-4">
+                  This action <strong>cannot be undone</strong>. All registrations will be lost forever.
+                </p>
+
+                <div className="alert alert-warning py-3 mb-4">
+                  <strong>Type the event title to confirm deletion:</strong>
+                </div>
+
+                <input
+                  type="text"
+                  className="form-control form-control-lg text-center mb-3"
+                  placeholder={`Type "${eventToDelete.title}" exactly`}
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  autoFocus
+                  style={{ fontWeight: 'bold', letterSpacing: '1px' }}
+                />
+
+                <small className="text-muted">
+                  {deleteConfirmText === eventToDelete.title
+                    ? "Delete button enabled"
+                    : `Type the full title to enable deletion`}
+                </small>
               </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
-                <button className="btn btn-danger" onClick={handleDeleteEvent}>Delete</button>
+              <div className="modal-footer border-0 justify-content-center gap-3 pb-5">
+                <button className="btn btn-secondary btn-lg px-5" onClick={() => setShowDeleteModal(false)}>
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-danger btn-lg px-5"
+                  disabled={deleteConfirmText !== eventToDelete.title}
+                  onClick={handleDeleteEvent}
+                >
+                  {deleteConfirmText === eventToDelete.title ? "Delete Forever" : "Type Title to Enable"}
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+
+      <style>{`
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .hover-lift { transition: all 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important; }
+      `}</style>
+    </>
   );
 };
 
