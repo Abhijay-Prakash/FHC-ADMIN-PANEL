@@ -1,89 +1,83 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Offcanvas, Button, Nav } from "react-bootstrap";
-import {
-  User,
-  LayoutDashboard,
-  Calendar,
-  BookOpen,
-  FolderKanban,
-  Trophy,
-  Users,
-  Menu,
-  Cpu,
-} from "lucide-react";
+  import { useState } from "react";
+  import { Link, useLocation } from "react-router-dom";
+  import { Offcanvas, Nav } from "react-bootstrap";
+  import { Menu, User, LayoutDashboard, Calendar, Cpu,  Users, Sparkles } from "lucide-react";
 
-// ✅ Updated hrefs and labels to match the second code
-const navItems = [
-  { name: "Profile", href: "/admin/profile", icon: <User size={18} /> },
-  { name: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
-  { name: "BYTE", href: "/admin/byte", icon: <Cpu size={18} /> },
-  { name: "Events", href: "/admin/events", icon: <Calendar size={18} /> },
-  { name: "Members", href: "/admin/members", icon: <BookOpen size={18} /> },
-  { name: "Certificates", href: "/admin/certificates", icon: <BookOpen size={18} /> },
-  { name: "Projects", href: "/projects", icon: <FolderKanban size={18} /> },
-  { name: "Competitions", href: "/competitions", icon: <Trophy size={18} /> },
-  { name: "Community", href: "/community", icon: <Users size={18} /> },
-];
+  const navItems = [
+    { name: "Profile", href: "/admin/profile", icon: <User size={20} /> },
+    { name: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard size={20} /> },
+    { name: "BYTE", href: "/admin/byte", icon: <Cpu size={20} /> },
+    { name: "Events", href: "/admin/events", icon: <Calendar size={20} /> },
+    { name: "Members", href: "/admin/members", icon: <Users size={20} /> },
+    { name: "Certificates", href: "/admin/certificates", icon: <Sparkles size={20} /> },
+  ];
 
-export default function Sidebar() {
-  const [show, setShow] = useState(false);
-  const location = useLocation();
+  export default function Sidebar() {
+    const [show, setShow] = useState(false);
+    const location = useLocation();
 
-  const toggleSidebar = () => setShow(!show);
-
-  const NavLinks = () =>
-    navItems.map((item) => (
-      <Nav.Item key={item.href} className="mb-2">
-        <Link
-          to={item.href}
-          className={`d-flex align-items-center gap-2 nav-link ${location.pathname === item.href ? "fw-bold text-primary" : ""}`}
-          onClick={() => setShow(false)}
+    return (
+      <>
+        {/* Mobile Toggle */}
+        <button
+          className="d-md-none position-fixed top-0 start-0 m-3 btn btn-outline-light rounded-pill shadow-lg z-3"
+          onClick={() => setShow(true)}
+          style={{ zIndex: 1050 }}
         >
-          {item.icon}
-          {item.name}
-        </Link>
-      </Nav.Item>
-    ));
+          <Menu size={24} />
+        </button>
 
-  return (
-    <>
-      {/* Mobile Toggle Button */}
-      <Button
-        variant="outline-secondary"
-        className="d-md-none position-fixed top-0 start-0 m-3 z-3"
-        onClick={toggleSidebar}
-        style={{ zIndex: 1041 }}
-      >
-        <Menu size={20} />
-      </Button>
+        {/* Mobile Offcanvas */}
+        <Offcanvas show={show} onHide={() => setShow(false)} className="bg-dark bg-opacity-95">
+          <Offcanvas.Header closeButton closeVariant="white">
+            <Offcanvas.Title className="text-gradient fw-bold">FHC Tech Club</Offcanvas.Title>
+          </Offcanvas.Header>
+          <Offcanvas.Body>
+            <Nav className="flex-column gap-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  onClick={() => setShow(false)}
+                  className={`d-flex align-items-center gap-3 px-4 py-3 rounded-3 text-white text-decoration-none sidebar-glow transition-all ${
+                    location.pathname === item.href ? "bg-primary bg-opacity-20 fw-bold" : "opacity-80"
+                  }`}
+                >
+                  <span className="text-cyan">{item.icon}</span>
+                  <span>{item.name}</span>
+                </Link>
+              ))}
+            </Nav>
+          </Offcanvas.Body>
+        </Offcanvas>
 
-      {/* Offcanvas Sidebar for Mobile */}
-      <Offcanvas show={show} onHide={toggleSidebar} responsive="md">
-        <Offcanvas.Header closeButton>
-          <Offcanvas.Title>FHC Tech Club</Offcanvas.Title>
-        </Offcanvas.Header>
-        <Offcanvas.Body>
-          <Nav className="flex-column">{NavLinks()}</Nav>
-        </Offcanvas.Body>
-      </Offcanvas>
+        {/* Desktop Sidebar */}
+        <div
+          className="d-none d-md-block position-fixed top-0 start-0 h-100 glass p-4"
+          style={{ width: "180px", zIndex: 1040 }}
+        >
+          <div className="text-center mb-5">
+            <h4 className="text-gradient fw-bold">FHC Tech</h4>
+            <small className="text-cyan opacity-75">Admin Portal</small>
+          </div>
 
-      {/* Static Sidebar for Desktop */}
-      <div
-        className="d-none d-md-block border-end bg-light p-3"
-        style={{
-          width: "170px", // Match second version
-          height: "100vh",
-          position: "fixed",
-          top: 0,
-          left: 0,
-          zIndex: 1040,
-          transition: "all 0.3s ease",
-        }}
-      >
-        <h5 className="mb-4">FHC Tech Club</h5>
-        <Nav className="flex-column">{NavLinks()}</Nav>
-      </div>
-    </>
-  );
-}
+          <Nav className="flex-column gap-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={`d-flex align-items-center gap-3 px-4 py-3 rounded-3 text-white text-decoration-none sidebar-glow transition-all ${
+                  location.pathname === item.href
+                    ? "bg-primary bg-opacity-30 fw-bold border-start border-primary border-4"
+                    : "opacity-70 hover:opacity-100"
+                }`}
+              >
+                <span className="text-cyan">{item.icon}</span>
+                <span>{item.name}</span>
+              </Link>
+            ))}
+          </Nav>
+        </div>
+      </>
+    );
+  }
