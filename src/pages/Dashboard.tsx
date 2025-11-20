@@ -6,18 +6,30 @@ import {
   PeopleFill, 
   Calendar3, 
   Trophy, 
-  Stars,          // ← Sparkles replacement
-  ArrowClockwise   // ← RefreshCw replacement
+  Stars, 
+  ArrowClockwise 
 } from "react-bootstrap-icons";
+
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from "recharts";
 
 type Event = { _id: string; title: string; date: string; time: string; location: string; };
 type Stats = { totalUsers: number; totalEvents: number; totalBYTEParticipants: number; };
 type Member = { _id: string; name: string; email: string; profilePic: string; createdAt: string; };
+type GrowthData = { month: string; users: number; newUsers?: number };
 
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [newMembers, setNewMembers] = useState<Member[]>([]);
+  const [growthData, setGrowthData] = useState<GrowthData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>("");
@@ -28,19 +40,22 @@ const AdminDashboard: React.FC = () => {
       setRefreshing(true);
       setError(null);
 
-      const [statsRes, eventsRes, membersRes] = await Promise.all([
+      const [statsRes, eventsRes, membersRes, growthRes] = await Promise.all([
         axios.get("/dashboard/stats", { withCredentials: true }),
         axios.get("/dashboard/events/upcoming", { withCredentials: true }),
         axios.get("/dashboard/members/new", { withCredentials: true }),
+        axios.get("/members/growth", { withCredentials: true }), // Your endpoint
       ]);
 
       setStats(statsRes.data);
       setUpcomingEvents(eventsRes.data?.events || []);
       setNewMembers(Array.isArray(membersRes.data) ? membersRes.data : []);
+      setGrowthData(growthRes.data.monthly || []);
 
       setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch (err: any) {
       setError("Failed to load dashboard data");
+      console.error(err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -76,7 +91,6 @@ const AdminDashboard: React.FC = () => {
   return (
     <>
       <div className="min-vh-100" style={{ background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)" }}>
-        {/* Navbar */}
         <Navbar className="shadow-lg border-bottom border-primary border-opacity-25" style={{ background: "rgba(20, 20, 40, 0.7)", backdropFilter: "blur(12px)" }}>
           <Container fluid>
             <Navbar.Brand className="text-white fw-bold d-flex align-items-center gap-3">
@@ -91,7 +105,8 @@ const AdminDashboard: React.FC = () => {
                 variant="outline-light" 
                 size="sm" 
                 onClick={fetchDashboardData}
-                className="d-flex align-items-center gap-2 border-white border-opacity-50"
+                disabled={refreshing}
+                className="d-flex align-items-center gap-2"
               >
                 <ArrowClockwise size={16} className={refreshing ? "spin" : ""} />
                 Refresh
@@ -125,6 +140,61 @@ const AdminDashboard: React.FC = () => {
             ))}
           </Row>
 
+          {/* User Growth Chart */}
+          <Row className="g-4 mb-5">
+            <Col xs={12}>
+              <Card className="glass-card border-0">
+                <Card.Header className="bg-transparent border-0 text-white d-flex justify-content-between align-items-center">
+                  <h4 className="fw-bold mb-0">
+                    <PeopleFill className="me-2 text-cyan" size={26} />
+                    User Growth Over Time
+                  </h4>
+                  <Badge bg="primary" pill className="fs-6">
+                    {stats?.totalUsers?.toLocaleString()} Total
+                  </Badge>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  {growthData.length === 0 ? (
+                    <div className="text-center py-5">
+                      <Spinner animation="border" variant="primary" />
+                      <p className="text-white opacity-60 mt-3">Loading growth data...</p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={320}>
+                      <AreaChart data={growthData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#00d4ff" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.1)" />
+                        <XAxis dataKey="month" stroke="#ccc" style={{ fontSize: '0.9rem' }} />
+                        <YAxis stroke="#ccc" style={{ fontSize: '0.9rem' }} />
+                        <Tooltip 
+                          contentStyle={{ background: "rgba(20,20,40,0.95)", border: "1px solid #00d4ff", borderRadius: "8px", backdropFilter: "blur(10px)" }}
+                          labelStyle={{ color: "#00ffff", fontWeight: "bold" }}
+                          formatter={(value: number) => value.toLocaleString()}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="users"
+                          stroke="#00d4ff"
+                          strokeWidth={4}
+                          fillOpacity={1}
+                          fill="url(#colorGrowth)"
+                          dot={{ fill: "#00d4ff", r: 6 }}
+                          activeDot={{ r: 8 }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Upcoming Events + New Members */}
           <Row className="g-4">
             {/* Upcoming Events */}
             <Col lg={6}>
@@ -176,11 +246,11 @@ const AdminDashboard: React.FC = () => {
                             width={60}
                             height={60}
                             style={{ border: "3px solid rgba(255,255,255,0.2)", objectFit: "cover" }}
-                            onError={e => e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=6366f1&color=fff`}
+                            onError={e => (e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=6366f1&color=fff`)}
                           />
                           <div className="text-white flex-grow-1">
                             <h6 className="fw-bold mb-1">{m.name}</h6>
-                            <small className="opacity-75 d-block">Joined on {formatJoinedDate(m.createdAt)}</small>
+                            <small className="opacity-75 d-block">Joined {formatJoinedDate(m.createdAt)}</small>
                             <small className="text-cyan">{m.email}</small>
                           </div>
                         </div>
@@ -194,7 +264,6 @@ const AdminDashboard: React.FC = () => {
         </Container>
       </div>
 
-      {/* Fixed <style> tag — no more jsx error */}
       <style>{`
         .glass-card {
           background: rgba(255, 255, 255, 0.05);
