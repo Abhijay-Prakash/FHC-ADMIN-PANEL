@@ -44,7 +44,7 @@ const AdminDashboard: React.FC = () => {
         axios.get("/dashboard/stats", { withCredentials: true }),
         axios.get("/dashboard/events/upcoming", { withCredentials: true }),
         axios.get("/dashboard/members/new", { withCredentials: true }),
-        axios.get("/members/growth", { withCredentials: true }), // Your endpoint
+        axios.get("users/members/growth", { withCredentials: true }), // Your endpoint
       ]);
 
       setStats(statsRes.data);
