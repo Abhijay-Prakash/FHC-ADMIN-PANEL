@@ -1,7 +1,8 @@
   import { useState } from "react";
   import { Link, useLocation } from "react-router-dom";
   import { Offcanvas, Nav } from "react-bootstrap";
-  import { Menu, User, LayoutDashboard, Calendar, Cpu,  Users, Sparkles } from "lucide-react";
+  import { Menu, User, LayoutDashboard, Calendar, Cpu,  Users, Sparkles,FolderGit2 } from "lucide-react";
+  
 
   const navItems = [
     { name: "Profile", href: "/admin/profile", icon: <User size={20} /> },
@@ -10,6 +11,7 @@
     { name: "Events", href: "/admin/events", icon: <Calendar size={20} /> },
     { name: "Members", href: "/admin/members", icon: <Users size={20} /> },
     { name: "Certificates", href: "/admin/certificates", icon: <Sparkles size={20} /> },
+    { name: "Projects", href: "/admin/projects", icon: <FolderGit2 size={20} /> },
   ];
 
   export default function Sidebar() {

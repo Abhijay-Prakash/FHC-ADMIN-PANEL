@@ -10,6 +10,7 @@ import MembersPage from './pages/Members';
 import MemberDetailPage from './pages/MemberDetail';
 import CertificateSender from './pages/CertificateSender';
 import SendIndividualCertificatesPage from './pages/SendIndividualCerti';
+import ProjectsPage from './pages/ProjectsPage'; 
 
 function Layout() {
   const location = useLocation();
@@ -17,7 +18,6 @@ function Layout() {
 
   return (
     <div className="d-flex min-vh-100">
-      {/* Only show sidebar on protected routes */}
       {!isLoginPage && <Sidebar />}
 
       <main className={!isLoginPage ? "flex-grow-1 content-area p-4 p-md-5" : "w-100"}>
@@ -32,6 +32,9 @@ function Layout() {
           <Route path="/byte-register/:courseId" element={<ByteParticipants />} />
           <Route path="/admin/certificates" element={<CertificateSender />} />
           <Route path="/certificates/individual/:eventId" element={<SendIndividualCertificatesPage />} />
+          
+          {/* NEW ROUTE */}
+          <Route path="/admin/projects" element={<ProjectsPage />} />
         </Routes>
       </main>
     </div>
