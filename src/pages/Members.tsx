@@ -20,6 +20,7 @@ interface Member {
   class: string;
   role: string;
   createdAt: string;
+  tags?: string[];
 }
 
 const ViewMembers: React.FC = () => {
@@ -27,6 +28,8 @@ const ViewMembers: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [loading, setLoading] = useState<boolean>(true);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [tagDrafts, setTagDrafts] = useState<Record<string, string>>({});
+  const [savingTagsId, setSavingTagsId] = useState<string | null>(null);
 
   const formatJoinedDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -71,6 +74,25 @@ const ViewMembers: React.FC = () => {
     } catch (error) {
       console.error("Failed to update role", error);
       alert("Could not update role. Try again later.");
+    }
+  };
+
+  const updateMemberTags = async (member: Member) => {
+    const tags = (tagDrafts[member._id] ?? (member.tags ?? []).join(', '))
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(Boolean);
+
+    setSavingTagsId(member._id);
+    try {
+      const { data } = await axios.patch(`/users/${member._id}/tags`, { tags });
+      setMembers(current => current.map(item => item._id === member._id ? { ...item, tags: data.tags } : item));
+      setTagDrafts(current => ({ ...current, [member._id]: (data.tags ?? []).join(', ') }));
+    } catch (error) {
+      console.error('Failed to update member tags', error);
+      alert('Could not update tags. Try again later.');
+    } finally {
+      setSavingTagsId(null);
     }
   };
 
@@ -204,6 +226,26 @@ const ViewMembers: React.FC = () => {
 
                     {/* Card Body */}
                     <div className="member-card-body">
+                      <div className="mb-3">
+                        <div className="d-flex flex-wrap gap-1 mb-2">
+                          {(member.tags ?? []).map(tag => <span className="badge rounded-pill text-bg-info" key={tag}>{tag}</span>)}
+                          {!member.tags?.length && <span className="small text-white-50">No tags yet</span>}
+                        </div>
+                        <label className="small text-white-50 mb-1" htmlFor={`member-tags-${member._id}`}>Admin tags, comma-separated</label>
+                        <div className="input-group input-group-sm">
+                          <input
+                            id={`member-tags-${member._id}`}
+                            className="form-control"
+                            value={tagDrafts[member._id] ?? (member.tags ?? []).join(', ')}
+                            onChange={event => setTagDrafts(current => ({ ...current, [member._id]: event.target.value }))}
+                            placeholder="Founder, Ex-Chair"
+                            maxLength={409}
+                          />
+                          <button className="btn btn-outline-info" onClick={() => updateMemberTags(member)} disabled={savingTagsId === member._id}>
+                            {savingTagsId === member._id ? 'Saving...' : 'Save'}
+                          </button>
+                        </div>
+                      </div>
                       {/* Contact Info */}
                       <div className="contact-section">
                         <div className="contact-item">

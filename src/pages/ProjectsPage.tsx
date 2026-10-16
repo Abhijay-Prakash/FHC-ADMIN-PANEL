@@ -31,6 +31,7 @@ interface ProjectType {
   createdAt: string;
 }
 
+
 const skillColors: Record<string, string> = {
   React: "#61dafb",
   Nodejs: "#339933",
@@ -47,6 +48,7 @@ const skillColors: Record<string, string> = {
   Tailwind: "#06b6d4",
   Default: "#8b5cf6",
 };
+
 
 const ProjectsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"approved" | "pending">("pending");
@@ -131,7 +133,7 @@ const ProjectsPage: React.FC = () => {
       </div>
     );
   }
-
+  
   return (
     <>
       <div

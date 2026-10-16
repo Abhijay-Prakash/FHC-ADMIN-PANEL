@@ -7,6 +7,7 @@ import ByteParticipants from './pages/ByteParticipants';
 import EventsPage from './pages/EventsPage';
 import ViewRegistrationsPage from './pages/ViewRegistrations';
 import MembersPage from './pages/Members';
+import AlumniPage from './pages/Alumni';
 import MemberDetailPage from './pages/MemberDetail';
 import CertificateSender from './pages/CertificateSender';
 import SendIndividualCertificatesPage from './pages/SendIndividualCerti';
@@ -28,6 +29,7 @@ function Layout() {
           <Route path="/admin/events" element={<EventsPage />} />
           <Route path="/events/registrations/:eventId" element={<ViewRegistrationsPage />} />
           <Route path="/admin/members" element={<MembersPage />} />
+          <Route path="/admin/alumni" element={<AlumniPage />} />
           <Route path="/admin/profile" element={<MemberDetailPage />} />
           <Route path="/byte-register/:courseId" element={<ByteParticipants />} />
           <Route path="/admin/certificates" element={<CertificateSender />} />
