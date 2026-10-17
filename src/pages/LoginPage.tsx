@@ -1,30 +1,37 @@
 // src/pages/LoginPage.tsx
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import axios from '../axiosConfig';
-import { Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const AdminLoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setMsg('');
 
     try {
-      const response = await axios.post('/auth/login', { email, password });
+      const response = await axios.post('/admin/login', { email: email.trim().toLowerCase(), password });
       const { token } = response.data;
+      if (!token) throw new Error('The server did not return an admin session.');
       localStorage.setItem('authToken', token);
 
-      setMsg('Login successful! Redirecting...');
-      setTimeout(() => navigate('/admin/dashboard'), 1200);
+      const state = location.state as { from?: { pathname?: string } } | null;
+      const requestedPath = state?.from?.pathname;
+      const safeDestination = requestedPath && requestedPath !== '/admin/login'
+        ? requestedPath
+        : '/admin/dashboard';
+      navigate(safeDestination, { replace: true });
     } catch (err: any) {
-      setMsg(err.response?.data?.message || 'Invalid credentials');
+      setMsg(err.response?.data?.message || err.message || 'Unable to sign in. Check your credentials and try again.');
     } finally {
       setLoading(false);
     }
@@ -81,7 +88,7 @@ const AdminLoginPage = () => {
           <div>
             <label className="text-white opacity-90 fw-medium">Password</label>
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="form-control mt-2"
@@ -93,6 +100,15 @@ const AdminLoginPage = () => {
               }}
               required
             />
+            <button
+              type="button"
+              className="btn btn-link text-white-50 p-0 mt-2 d-flex align-items-center gap-2"
+              onClick={() => setShowPassword((visible) => !visible)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              {showPassword ? 'Hide password' : 'Show password'}
+            </button>
           </div>
 
           <button

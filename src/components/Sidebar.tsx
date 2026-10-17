@@ -1,7 +1,8 @@
   import { useState } from "react";
-  import { Link, useLocation } from "react-router-dom";
+  import { Link, useLocation, useNavigate } from "react-router-dom";
   import { Offcanvas, Nav } from "react-bootstrap";
-  import { Menu, User, LayoutDashboard, Calendar, Cpu, Users, Sparkles, FolderGit2, GraduationCap } from "lucide-react";
+  import { Menu, User, LayoutDashboard, Calendar, Cpu, Users, Sparkles, FolderGit2, GraduationCap, LogOut } from "lucide-react";
+  import { clearAdminSession } from "../adminSession";
   
 
   const navItems = [
@@ -18,6 +19,12 @@
   export default function Sidebar() {
     const [show, setShow] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
+    const handleLogout = () => {
+      clearAdminSession();
+      setShow(false);
+      navigate("/admin/login", { replace: true });
+    };
 
     return (
       <>
@@ -50,6 +57,10 @@
                   <span>{item.name}</span>
                 </Link>
               ))}
+              <button onClick={handleLogout} className="d-flex align-items-center gap-3 px-4 py-3 rounded-3 text-white-50 border-0 bg-transparent text-start sidebar-glow">
+                <LogOut size={20} />
+                <span>Log out</span>
+              </button>
             </Nav>
           </Offcanvas.Body>
         </Offcanvas>
@@ -79,6 +90,10 @@
                 <span>{item.name}</span>
               </Link>
             ))}
+            <button onClick={handleLogout} className="d-flex align-items-center gap-3 px-4 py-3 rounded-3 text-white-50 border-0 bg-transparent text-start sidebar-glow">
+              <LogOut size={20} />
+              <span>Log out</span>
+            </button>
           </Nav>
         </div>
       </>
