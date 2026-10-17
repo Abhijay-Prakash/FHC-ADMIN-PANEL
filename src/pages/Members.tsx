@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Button, Form, Modal } from 'react-bootstrap';
 import { 
   ThreeDotsVertical,  
   Telephone, 
@@ -14,7 +15,7 @@ interface Member {
   _id: string;
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   profilePic?: string;
   semester: number;
   class: string;
@@ -30,6 +31,13 @@ const ViewMembers: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [tagDrafts, setTagDrafts] = useState<Record<string, string>>({});
   const [savingTagsId, setSavingTagsId] = useState<string | null>(null);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', class: '', semester: 1 });
+  const [profileError, setProfileError] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [deletingMember, setDeletingMember] = useState<Member | null>(null);
+  const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState('');
 
   const formatJoinedDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -74,6 +82,59 @@ const ViewMembers: React.FC = () => {
     } catch (error) {
       console.error("Failed to update role", error);
       alert("Could not update role. Try again later.");
+    }
+  };
+
+  const openEditMember = (member: Member) => {
+    setEditingMember(member);
+    setEditForm({
+      name: member.name,
+      email: member.email,
+      phone: member.phone ?? '',
+      class: member.class,
+      semester: member.semester ?? 1,
+    });
+    setProfileError('');
+  };
+
+  const saveMemberProfile = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingMember) return;
+
+    setSavingProfile(true);
+    setProfileError('');
+    try {
+      const { data } = await axios.patch(`/users/${editingMember._id}/profile`, {
+        name: editForm.name.trim(),
+        email: editForm.email.trim(),
+        phone: editForm.phone.trim(),
+        class: editForm.class,
+        semester: editForm.semester,
+      });
+      setMembers(current => current.map(member => member._id === editingMember._id ? { ...member, ...data } : member));
+      setEditingMember(null);
+    } catch (error: any) {
+      console.error('Failed to update member profile', error);
+      setProfileError(error.response?.data?.message || 'Could not update this member. Please try again.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const confirmDeleteMember = async () => {
+    if (!deletingMember) return;
+
+    setDeletingMemberId(deletingMember._id);
+    setDeleteError('');
+    try {
+      await axios.delete(`/users/${deletingMember._id}`);
+      setMembers(current => current.filter(member => member._id !== deletingMember._id));
+      setDeletingMember(null);
+    } catch (error: any) {
+      console.error('Failed to delete user', error);
+      setDeleteError(error.response?.data?.message || 'Could not delete this user. Please try again.');
+    } finally {
+      setDeletingMemberId(null);
     }
   };
 
@@ -155,6 +216,12 @@ const ViewMembers: React.FC = () => {
               className={`role-filter-btn ${selectedRole === 'member' ? 'active member-filter' : ''}`}
             >
               Members
+            </button>
+            <button
+              onClick={() => handleRoleFilter('participant')}
+              className={`role-filter-btn ${selectedRole === 'participant' ? 'active participant-filter' : ''}`}
+            >
+              Participants
             </button>
           </div>
 
@@ -254,12 +321,14 @@ const ViewMembers: React.FC = () => {
                             {member.email}
                           </a>
                         </div>
-                        <div className="contact-item">
-                          <Telephone size={18} style={{ color: roleColor }} />
-                          <a href={`tel:${member.phone}`} className="contact-link">
-                            {member.phone}
-                          </a>
-                        </div>
+                        {member.phone && (
+                          <div className="contact-item">
+                            <Telephone size={18} style={{ color: roleColor }} />
+                            <a href={`tel:${member.phone}`} className="contact-link">
+                              {member.phone}
+                            </a>
+                          </div>
+                        )}
                         <div className="contact-item">
                           <Calendar3 size={18} style={{ color: roleColor }} />
                           <span className="text-white-50">
@@ -271,6 +340,9 @@ const ViewMembers: React.FC = () => {
 
                     {/* Card Footer */}
                     <div className="member-card-footer">
+                      <button className="dropdown-toggle-btn mb-2" onClick={() => openEditMember(member)}>
+                        Edit Details
+                      </button>
                       <div className="position-relative">
                         <button
                           onClick={() => setDropdownOpen(isDropdownOpen ? null : member._id)}
@@ -307,9 +379,26 @@ const ViewMembers: React.FC = () => {
                               <span className="role-dot" style={{ background: '#14b8a6' }}></span>
                               Member
                             </button>
+                            <button
+                              onClick={() => updateMemberRole(member._id, 'participant')}
+                              className="dropdown-item-custom"
+                              style={{ '--role-color': '#14b8a6' } as React.CSSProperties}
+                            >
+                              <span className="role-dot" style={{ background: '#14b8a6' }}></span>
+                              Participant
+                            </button>
                           </div>
                         )}
                       </div>
+                      <button
+                        className="btn btn-outline-danger w-100 mt-2"
+                        onClick={() => {
+                          setDeleteError('');
+                          setDeletingMember(member);
+                        }}
+                      >
+                        Delete User
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -324,6 +413,65 @@ const ViewMembers: React.FC = () => {
           )}
         </div>
       </div>
+
+      <Modal show={editingMember !== null} onHide={() => setEditingMember(null)} centered className="member-edit-modal">
+        <Form onSubmit={saveMemberProfile}>
+          <Modal.Header closeButton closeVariant="white">
+            <Modal.Title>Edit member details</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {profileError && <div className="alert alert-danger py-2" role="alert">{profileError}</div>}
+            <Form.Group className="mb-3" controlId="edit-member-name">
+              <Form.Label>Name</Form.Label>
+              <Form.Control required maxLength={100} value={editForm.name} onChange={event => setEditForm(current => ({ ...current, name: event.target.value }))} />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="edit-member-email">
+              <Form.Label>Email</Form.Label>
+              <Form.Control required type="email" value={editForm.email} onChange={event => setEditForm(current => ({ ...current, email: event.target.value }))} />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="edit-member-phone">
+              <Form.Label>Contact number</Form.Label>
+              <Form.Control maxLength={30} value={editForm.phone} onChange={event => setEditForm(current => ({ ...current, phone: event.target.value }))} />
+            </Form.Group>
+            <Form.Group controlId="edit-member-class">
+              <Form.Label>Class</Form.Label>
+              <Form.Select required value={editForm.class} onChange={event => setEditForm(current => ({ ...current, class: event.target.value }))}>
+                {['CSA', 'CSB', 'CSC', 'CSD', 'EC', 'EI', 'EE', 'ME', 'CE', 'IMCA'].map(value => <option key={value} value={value}>{value}</option>)}
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mt-3" controlId="edit-member-semester">
+              <Form.Label>Current semester</Form.Label>
+              <Form.Select required value={editForm.semester} onChange={event => setEditForm(current => ({ ...current, semester: Number(event.target.value) }))}>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(value => <option key={value} value={value}>Semester {value}</option>)}
+              </Form.Select>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="outline-secondary" type="button" onClick={() => setEditingMember(null)} disabled={savingProfile}>Cancel</Button>
+            <Button variant="primary" type="submit" disabled={savingProfile}>{savingProfile ? 'Saving...' : 'Save changes'}</Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      <Modal show={deletingMember !== null} onHide={() => deletingMemberId ? undefined : setDeletingMember(null)} centered>
+        <Modal.Header closeButton={!deletingMemberId}>
+          <Modal.Title>Delete user?</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {deleteError && <div className="alert alert-danger py-2" role="alert">{deleteError}</div>}
+          <p className="mb-1">Are you sure you want to permanently delete:</p>
+          <strong>{deletingMember?.name}</strong>
+          <div className="text-muted small mt-2">
+            This also deletes projects they own, BYTE registrations, and their event and project membership links. This cannot be undone.
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setDeletingMember(null)} disabled={deletingMemberId !== null}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDeleteMember} disabled={deletingMemberId !== null}>
+            {deletingMemberId ? 'Deleting...' : 'Delete user'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       <style>{`
         @keyframes fadeUp { 
@@ -386,6 +534,28 @@ const ViewMembers: React.FC = () => {
           background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
           box-shadow: 0 8px 25px rgba(20, 184, 166, 0.5);
         }
+
+        .role-filter-btn.active.participant-filter {
+          background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+          box-shadow: 0 8px 25px rgba(20, 184, 166, 0.5);
+        }
+
+        .member-edit-modal .modal-content {
+          color: #fff;
+          background: linear-gradient(145deg, #201d4f, #17142f);
+          border: 1px solid rgba(0, 212, 255, 0.35);
+          border-radius: 18px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .member-edit-modal .form-control,
+        .member-edit-modal .form-select {
+          color: #fff;
+          border-color: rgba(255, 255, 255, 0.2);
+          background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .member-edit-modal .form-select option { color: #111827; }
 
         /* Member Cards */
         .member-card {

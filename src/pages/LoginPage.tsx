@@ -68,11 +68,13 @@ const AdminLoginPage = () => {
         {/* Form */}
         <form onSubmit={handleAdminLogin} className="space-y-4">
           <div>
-            <label className="text-white opacity-90 fw-medium">Email</label>
+            <label htmlFor="admin-email" className="text-white opacity-90 fw-medium">Email</label>
             <input
+              id="admin-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username"
               className="form-control mt-2"
               style={{
                 background: "rgba(255, 255, 255, 0.1)",
@@ -86,11 +88,13 @@ const AdminLoginPage = () => {
           </div>
 
           <div>
-            <label className="text-white opacity-90 fw-medium">Password</label>
+            <label htmlFor="admin-password" className="text-white opacity-90 fw-medium">Password</label>
             <input
+              id="admin-password"
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               className="form-control mt-2"
               style={{
                 background: "rgba(255, 255, 255, 0.1)",
@@ -137,11 +141,8 @@ const AdminLoginPage = () => {
         {/* Message */}
         {msg && (
           <div
-            className={`mt-4 p-3 rounded-3 text-center fw-medium ${
-              msg.includes('success') || msg.includes('Redirecting')
-                ? 'bg-success bg-opacity-20 text-success border border-success'
-                : 'bg-danger bg-opacity-20 text-danger border border-danger'
-            }`}
+            role="alert"
+            className="mt-4 p-3 rounded-3 text-center fw-medium bg-danger bg-opacity-20 text-danger border border-danger"
             style={{ borderRadius: "12px" }}
           >
             {msg}
