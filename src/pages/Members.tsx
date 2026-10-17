@@ -27,6 +27,7 @@ interface Member {
 const ViewMembers: React.FC = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedRole, setSelectedRole] = useState<string>('all');
+  const [nameSearch, setNameSearch] = useState('');
   const [loading, setLoading] = useState<boolean>(true);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [tagDrafts, setTagDrafts] = useState<Record<string, string>>({});
@@ -69,8 +70,11 @@ const ViewMembers: React.FC = () => {
     setSelectedRole(role);
   };
 
-  const filteredMembers =
-    selectedRole === 'all' ? members : members.filter(member => member.role === selectedRole);
+  const normalizedNameSearch = nameSearch.trim().toLowerCase();
+  const filteredMembers = members.filter(member =>
+    (selectedRole === 'all' || member.role === selectedRole)
+    && (!normalizedNameSearch || member.name.toLowerCase().includes(normalizedNameSearch))
+  );
 
   const updateMemberRole = async (memberId: string, newRole: string) => {
     try {
@@ -223,6 +227,17 @@ const ViewMembers: React.FC = () => {
             >
               Participants
             </button>
+          </div>
+
+          <div className="d-flex justify-content-center mb-4">
+            <input
+              type="search"
+              className="form-control member-name-search"
+              aria-label="Search members by name"
+              placeholder="Search members by name..."
+              value={nameSearch}
+              onChange={event => setNameSearch(event.target.value)}
+            />
           </div>
 
           {/* Members Grid */}
@@ -539,6 +554,18 @@ const ViewMembers: React.FC = () => {
           background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
           box-shadow: 0 8px 25px rgba(20, 184, 166, 0.5);
         }
+
+        .member-name-search {
+          width: min(100%, 560px);
+          padding: 12px 18px;
+          border: 1px solid rgba(0, 212, 255, 0.4);
+          border-radius: 14px;
+          color: #fff;
+          background: rgba(15, 12, 41, 0.85);
+        }
+
+        .member-name-search::placeholder { color: rgba(255, 255, 255, 0.55); }
+        .member-name-search:focus { color: #fff; border-color: #00d4ff; background: rgba(15, 12, 41, 0.95); box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.18); }
 
         .member-edit-modal .modal-content {
           color: #fff;
