@@ -20,6 +20,17 @@ type Event = {
 };
 
 type NamePlacement = { x: number; y: number; width: number; height: number };
+type Delivery = {
+  _id: string;
+  user?: Attendee | null;
+  recipientName: string;
+  recipientEmail: string;
+  status: 'pending' | 'sending' | 'sent' | 'failed';
+  attempts: number;
+  lastAttemptAt?: string;
+  sentAt?: string;
+  lastError?: string;
+};
 
 type CertificateTemplate = {
   _id: string;
@@ -32,6 +43,8 @@ type CertificateTemplate = {
   nameColor: 'white' | 'black';
   emailSubject: string;
   emailBody: string;
+  deliveryCounts: Partial<Record<Delivery['status'], number>>;
+  deliveries: Delivery[];
 };
 
 const defaultPlacement: NamePlacement = { x: 0.2, y: 0.42, width: 0.6, height: 0.12 };
@@ -103,6 +116,7 @@ const CertificateSender: React.FC = () => {
   const [draftSubject, setDraftSubject] = useState(defaultSubject);
   const [draftBody, setDraftBody] = useState(defaultBody);
   const [editingSettingsId, setEditingSettingsId] = useState<string | null>(null);
+  const [historyOpenId, setHistoryOpenId] = useState<string | null>(null);
   const [settingsDraft, setSettingsDraft] = useState<{ namePlacement: NamePlacement; nameColor: 'white' | 'black'; emailSubject: string; emailBody: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
@@ -163,7 +177,10 @@ const CertificateSender: React.FC = () => {
       setRegisteredUsers(registrationResponse.data.registeredUsers || []);
       setAttendedUsers(registrationResponse.data.attendedUsers || []);
       const templatesWithImages = await Promise.all((templateResponse.data.templates || []).map(async (template: CertificateTemplate) => {
-        const imageResponse = await axios.get(`/certificate/templates/${template._id}/image`, { responseType: 'blob' });
+        const [imageResponse, deliveryResponse] = await Promise.all([
+          axios.get(`/certificate/templates/${template._id}/image`, { responseType: 'blob' }),
+          axios.get(`/certificate/templates/${template._id}/deliveries`),
+        ]);
         return {
           ...template,
           imageUrl: trackImageUrl(imageResponse.data),
@@ -171,6 +188,8 @@ const CertificateSender: React.FC = () => {
           nameColor: template.nameColor || 'white',
           emailSubject: template.emailSubject || defaultSubject,
           emailBody: template.emailBody || defaultBody,
+          deliveryCounts: deliveryResponse.data.counts || {},
+          deliveries: deliveryResponse.data.deliveries || [],
         };
       }));
       setTemplates(templatesWithImages);
@@ -223,6 +242,8 @@ const CertificateSender: React.FC = () => {
         ...savedData.template,
         ...settingsData.settings,
         imageUrl: trackImageUrl(imageResponse.data),
+        deliveryCounts: {},
+        deliveries: [],
         recipients: savedData.template.recipients?.map((recipient: string | Attendee) => typeof recipient === 'string' ? recipientMap.get(recipient) : recipient).filter((user: Attendee | undefined): user is Attendee => Boolean(user)) || [],
       };
       setTemplates((current) => [template, ...current]);
@@ -279,6 +300,13 @@ const CertificateSender: React.FC = () => {
     }
   };
 
+  const refreshDeliveries = async (templateId: string) => {
+    const { data } = await axios.get(`/certificate/templates/${templateId}/deliveries`);
+    setTemplates((current) => current.map((template) => template._id === templateId
+      ? { ...template, deliveries: data.deliveries || [], deliveryCounts: data.counts || {} }
+      : template));
+  };
+
   const sendTemplate = async (template: CertificateTemplate) => {
     if (template.recipients.length === 0) {
       setMessage({ text: 'Assign at least one recipient to this template first.', type: 'danger' });
@@ -289,15 +317,34 @@ const CertificateSender: React.FC = () => {
     setMessage(null);
     try {
       const { data } = await axios.post(`/certificate/templates/${template._id}/send`);
+      await refreshDeliveries(template._id);
       setMessage({ text: data.message, type: data.failed ? 'danger' : 'success' });
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
       setPreviewTemplateToSend(null);
     } catch (error: any) {
+      await refreshDeliveries(template._id).catch(() => undefined);
       setMessage({ text: error.response?.data?.message || 'Certificate sending failed. Check the backend email configuration.', type: 'danger' });
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
       setPreviewTemplateToSend(null);
+    } finally {
+      setSendingId(null);
+    }
+  };
+
+  const retryFailed = async (template: CertificateTemplate) => {
+    const failedCount = template.deliveryCounts.failed || 0;
+    if (!failedCount || !window.confirm(`Retry ${failedCount} failed certificate delivery(s) for “${template.name}”?`)) return;
+    setSendingId(template._id);
+    setMessage(null);
+    try {
+      const { data } = await axios.post(`/certificate/templates/${template._id}/retry-failed`);
+      await refreshDeliveries(template._id);
+      setMessage({ text: data.message, type: data.failed ? 'danger' : 'success' });
+    } catch (error: any) {
+      await refreshDeliveries(template._id).catch(() => undefined);
+      setMessage({ text: error.response?.data?.message || 'Failed to retry certificate deliveries.', type: 'danger' });
     } finally {
       setSendingId(null);
     }
@@ -428,6 +475,12 @@ const CertificateSender: React.FC = () => {
                                           <h4 className="h6 fw-bold mb-1">{template.name}</h4>
                                           <p className="small text-white-50 mb-1">{template.recipients.length} recipient{template.recipients.length === 1 ? '' : 's'}</p>
                                           <p className="small mb-0">{template.recipients.slice(0, 4).map((user) => user.name).join(', ')}{template.recipients.length > 4 ? `, +${template.recipients.length - 4} more` : ''}</p>
+                                          <div className="d-flex flex-wrap gap-2 mt-2 small">
+                                            <span className="badge bg-success">Sent {template.deliveryCounts.sent || 0}</span>
+                                            <span className="badge bg-danger">Failed {template.deliveryCounts.failed || 0}</span>
+                                            <span className="badge bg-secondary">Pending {template.deliveryCounts.pending || 0}</span>
+                                            <span className="badge bg-warning text-dark">Sending {template.deliveryCounts.sending || 0}</span>
+                                          </div>
                                         </div>
                                         <div className="d-flex align-items-start gap-2">
                                           <button className="btn btn-sm btn-outline-light" onClick={() => previewTemplate(template)} title="Preview"><Eye /></button>
@@ -435,9 +488,33 @@ const CertificateSender: React.FC = () => {
                                           <button className="btn btn-sm btn-info" disabled={sendingId === template._id || template.recipients.length === 0} onClick={() => previewTemplate(template, true)}>
                                             {sendingId === template._id ? <span className="spinner-border spinner-border-sm" /> : <><Send className="me-1" />Preview & Send</>}
                                           </button>
+                                          {(template.deliveryCounts.failed || 0) > 0 && <button className="btn btn-sm btn-warning" disabled={sendingId === template._id} onClick={() => retryFailed(template)}>Retry failed</button>}
+                                          <button className="btn btn-sm btn-outline-light" onClick={() => setHistoryOpenId((current) => current === template._id ? null : template._id)}>{historyOpenId === template._id ? 'Hide history' : 'History'}</button>
                                           <button className="btn btn-sm btn-outline-danger" onClick={() => deleteTemplate(template)} title="Delete template"><Trash /></button>
                                         </div>
                                       </div>
+                                      {historyOpenId === template._id && (
+                                        <div className="certificate-delivery-history mt-3 pt-3 border-top border-light border-opacity-25">
+                                          <h5 className="h6 fw-bold">Delivery history</h5>
+                                          {template.deliveries.length === 0 ? <p className="small text-white-50 mb-0">No send attempts yet.</p> : (
+                                            <div className="table-responsive">
+                                              <table className="table table-sm table-dark align-middle mb-0">
+                                                <thead><tr><th>Recipient</th><th>Status</th><th>Attempts</th><th>Last attempt</th><th>Sent</th><th>Details</th></tr></thead>
+                                                <tbody>{template.deliveries.map((delivery) => (
+                                                  <tr key={delivery._id}>
+                                                    <td><strong>{delivery.recipientName}</strong><br /><small>{delivery.recipientEmail}</small></td>
+                                                    <td><span className={`badge ${delivery.status === 'sent' ? 'bg-success' : delivery.status === 'failed' ? 'bg-danger' : delivery.status === 'sending' ? 'bg-warning text-dark' : 'bg-secondary'}`}>{delivery.status}</span></td>
+                                                    <td>{delivery.attempts}</td>
+                                                    <td>{delivery.lastAttemptAt ? new Date(delivery.lastAttemptAt).toLocaleString() : '—'}</td>
+                                                    <td>{delivery.sentAt ? new Date(delivery.sentAt).toLocaleString() : '—'}</td>
+                                                    <td className="small text-warning">{delivery.lastError || '—'}</td>
+                                                  </tr>
+                                                ))}</tbody>
+                                              </table>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
                                       {editingSettingsId === template._id && settingsDraft && (
                                         <div className="certificate-settings-editor mt-3 pt-3 border-top border-light border-opacity-25">
                                           {template.imageUrl && <NamePlacementEditor imageUrl={template.imageUrl} placement={settingsDraft.namePlacement} color={settingsDraft.nameColor} onChange={(namePlacement) => setSettingsDraft((current) => current ? { ...current, namePlacement } : current)} />}
